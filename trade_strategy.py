@@ -141,7 +141,6 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
     global top_five_current_data
     global trade_type
     ppn = place_position_nums # 计划持仓时，实际拥有的最大头寸数量
-    n_sz = sz # 实际的minSz的整数倍数
 
     lq.push(('程序状态', 'Info', '程序开始启动'))
 
@@ -166,7 +165,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
     # 从配置文件中加载下列参数:
     (long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
-     l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4) = load_parameter()
+     l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz) = load_parameter()
 
     # 生成的随机时间,由random.randint(random_start, random_end)生成，初始化为0
     random_time:int =0
@@ -200,7 +199,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             # 及时保存重要参数
             try:
                 save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
-                               l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4)
+                               l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4,n_sz)
                 lq.push(('参数保存', 'Info', '正在保存重要参数'))
             except:
                 lq.push(('参数保存', 'Error', '保存重要参数失败'))
@@ -241,7 +240,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     should_exit = True
                     save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit,
                                    short_place_uplimit,
-                                   l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4)
+                                   l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4,n_sz)
                     continue
 
                 yesterday_obj = dt.strptime(yesterday, "%Y-%m-%d")  # 将字符串转换为时间对象
@@ -275,7 +274,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                                f"错误原因：{e}\n")
                             save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit,
                                            short_place_uplimit,
-                                           l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4)
+                                           l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4,n_sz)
                             break
                 if should_exit is True: continue  # 保存前一天的日数据到数据库中去失败，应该退出程序,否则继续执行
 
@@ -309,7 +308,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                             # 保存参数到配置文件，直接退出程序
                             save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit,
                                            short_place_uplimit,
-                                           l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4)
+                                           l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4,n_sz)
                             break
                 if should_exit is True: continue  # 从数据库中重新获取前一天的收盘价失败，应该退出程序，否则继续执行
 
@@ -733,7 +732,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                    f"错误原因：{e}\n")
                 # 及时保存重要参数
                 save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
-                               l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4)
+                               l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4,n_sz)
 
 
 
@@ -1046,7 +1045,7 @@ def update_short_place_downlimit_and_short_place_uplimit_for_the_s_c(short_place
 
 
 def save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
-                   l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4):
+                   l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz):
     """
     此函数用于在策略管理线程发生错误或退出时保存当前的动态参数到文件。
 
@@ -1066,6 +1065,7 @@ def save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlim
     :param d_p_2: 跌幅区间2的计数器。
     :param d_p_3: 跌幅区间3的计数器。
     :param d_p_4: 跌幅区间4的计数器。
+    :param n_sz: 实际的minSz整数倍
     :return: 无返回值，函数执行后会将参数保存到文件中。
     """
     data = {'long_place_downlimit': long_place_downlimit,
@@ -1081,7 +1081,8 @@ def save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlim
             'd_p_1': d_p_1,
             'd_p_2': d_p_2,
             'd_p_3': d_p_3,
-            'd_p_4': d_p_4
+            'd_p_4': d_p_4,
+            'n_sz': n_sz
             }
     with open('parameter.txt', 'w') as f:
         # 通过将 buffering 参数设置为 0，可以让文件以无缓冲的方式进行写入操作，
@@ -1099,7 +1100,7 @@ def load_parameter():
                 data['short_place_downlimit'], data['short_place_uplimit'],
                 data['l_c'], data['s_c'], data['u_p_1'], data['u_p_2'],
                 data['u_p_3'], data['u_p_4'], data['d_p_1'], data['d_p_2'],
-                data['d_p_3'], data['d_p_4'])
+                data['d_p_3'], data['d_p_4'],data['n_sz'])
 
 
 def take_progit(o: MyOkx, instId: str, leverage: int, place_uplimit: float, place_downlimit: float):
