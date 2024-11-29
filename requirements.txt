@@ -1,0 +1,8 @@
+python-okx
+pymysql~=1.1.1
+pandas~=2.2.3
+requests~=2.32.3
+okx~=2.1.1
+ccxt~=4.4.19
+numpy~=2.1.1
+psutil~=6.1.0
