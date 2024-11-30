@@ -651,7 +651,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 if close_positions_re == 1:
                     trade_type = 3
                     # 止损后，如果下一次开仓加倍
-                    n_sz = n_sz * 2
+                    n_sz += n_sz
                     ppn = ppn + 45
                     lq.push(('止损记录', 'Success', '一键止损成功'))
                 else:
