@@ -386,7 +386,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                 elif current_position_nums > 0 and abs(current_position_nums) < ppn - 10:  # 说明当前有多头仓位，但是小于ppn-10
 
-                    d, n_sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
+                    d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
                         lq.push(('交易记录', 'Error', f'买入失败'))
@@ -412,7 +412,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                 elif current_position_nums < 0:  # 说明是空头仓位，开多头仓位且保证头寸小于等于ppn
 
-                    d, n_sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
+                    d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
                         lq.push(('交易记录', 'Error', f'买入失败'))
@@ -438,7 +438,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                 elif current_position_nums == 0:  # 说明是无仓位，直接开多头仓位
 
-                    d, n_sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
+                    d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
                         lq.push(('交易记录', 'Error', f'买入失败'))
@@ -474,7 +474,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                 elif current_position_nums > 0:  # 说明当前持有多头仓位，但需要开空空头仓位，并且保证头寸小于等于ppn
 
-                    d, n_sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
+                    d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
                         lq.push(('交易记录', 'Error', f'卖出失败'))
@@ -500,7 +500,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                 elif current_position_nums < 0 and abs(current_position_nums) < ppn - 10:  # 说明是空头仓位，开空头仓位且保证头寸小于=150。
 
-                    d, n_sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
+                    d,Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
                         lq.push(('交易记录', 'Error', f'卖出失败'))
@@ -526,7 +526,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                 elif current_position_nums == 0:  # 说明是无仓位，直接开空头仓位,而且只开100的头寸
 
-                    d, n_sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
+                    d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
                         lq.push(('交易记录', 'Error', f'卖出失败'))
@@ -652,7 +652,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     trade_type = 3
                     # 止损后，如果下一次开仓加倍
                     n_sz = n_sz * 2
-                    ppn = ppn + 50
+                    ppn = ppn + 45
                     lq.push(('止损记录', 'Success', '一键止损成功'))
                 else:
                     lq.push(('止损记录', 'Error', '一键止损失败'))
