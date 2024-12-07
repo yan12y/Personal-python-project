@@ -1,5 +1,12 @@
 """
-这个模块专门用来存储数据到mysql数据库中以及一些与数据库相关的常用操作其他的功能
+这个模块提供了与MySQL数据库相关的操作功能。具体包括：
+
+将数据保存到MySQL数据库。
+从数据库中获取数据并转换为DataFrame。
+获取前一天的收盘价。
+实时数据的批量写入数据库操作。
+创建控制程序开关的表。
+
 """
 
 import time
@@ -13,6 +20,7 @@ import pymysql
 
 # 自定义模块
 from myokx import MyOkx
+
 
 def sava_all_data_to_mysql(start_date: str, instId: str, username: str, password: str, host: str, database: str,
                            table: str, port: int = 3306) -> None:

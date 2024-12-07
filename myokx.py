@@ -1,12 +1,19 @@
 """
-这个模块定义了一个MyOkx的类，类中提供了很多接口方法
-"""
+这个模块定义了一个MyOkx类，封装了与OKX交易所API交互的接口。具体功能包括：
 
-import json
-from datetime import datetime
+获取账户信息。
+设置杠杆倍数。
+下单交易。
+获取仓位信息。
+获取历史K线数据。
+平仓操作。
+"""
 
 # 内置模块
 import requests
+import json
+from datetime import datetime
+
 # 第三方模块
 from okx.Account import AccountAPI
 from okx.MarketData import MarketAPI

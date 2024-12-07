@@ -1,9 +1,27 @@
+"""
+这个模块提供了获取和存储市场数据的功能。具体功能包括：
+
+获取指定时间范围内的交易对K线数据。
+获取从开始时间到现在的所有K线数据。
+将数据保存到MySQL数据库中。
+从MySQL数据库中获取数据并转换为DataFrame。
+获取特定加密货币的最新价格，并计算其标准化后的平均值。
+"""
+
+" 内置模块 "
+import time
+
+" 第三方模块"
 import ccxt
 import numpy as np
 import pandas as pd
-import time
 import pymysql
 
+" 自定义模块 "
+from myokx import get_ticker_last_price
+
+
+# 获取指定时间范围内的交易对的K线数据的函数
 def fetch_ohlcv(symbol, start_date, end_date, timeframe, exchange_name='okx'):
     """
     获取指定时间范围内的交易对的K线数据
@@ -60,6 +78,7 @@ def fetch_ohlcv(symbol, start_date, end_date, timeframe, exchange_name='okx'):
     return data_frame
 
 
+# 获取从开始时间到现在的指定交易对的所有K线数据的函数
 def fetch_all_ohlcv(symbol, start_date, timeframe, exchange_name='okx'):
     """
     获取从开始时间到现在的指定交易对的所有K线数据
@@ -120,6 +139,7 @@ def fetch_all_ohlcv(symbol, start_date, timeframe, exchange_name='okx'):
     return df
 
 
+# 将DataFrame保存到MySQL数据库中的函数
 def save_to_mysql(host='localhost', port=3306, user='', password='', database='', table='ohlcv_data', df=None):
     """
     将DataFrame保存到MySQL数据库中
@@ -203,6 +223,7 @@ def fetch_all_tickers(exchange_name):
         return None
 
 
+# 从MySQL数据库中获取指定表的数据并转换为DataFrame的函数
 def get_df_from_mysql(host='localhost', port=3306, user='', password='', database='', table='ohlcv_data'):
     """
     从 MySQL 数据库中获取指定表的数据并转换为 DataFrame。
@@ -236,9 +257,7 @@ def get_df_from_mysql(host='localhost', port=3306, user='', password='', databas
         raise f"从mysql数据库中获取数据时发生错误,错误原因为: {e}"
 
 
-from myokx import get_ticker_last_price
-
-
+# 获取比特币（BTC）、Solana（SOL）、以太坊（ETH）和狗狗币（DOGE）的最新价格，并计算其标准化后的平均值的函数
 def get_btc_sol_eth_doge_last_price_mean_normalized() -> np.array:
     """
     获取比特币（BTC）、Solana（SOL）、以太坊（ETH）和狗狗币（DOGE）的最新价格，并计算其标准化后的平均值。
