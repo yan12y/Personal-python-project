@@ -6,6 +6,9 @@
 将数据保存到MySQL数据库中。
 从MySQL数据库中获取数据并转换为DataFrame。
 获取特定加密货币的最新价格，并计算其标准化后的平均值。
+@Time: 2024/11/1 9:45
+@Author: ysh
+@File: getdata.py
 """
 
 " 内置模块 "

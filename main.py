@@ -1,6 +1,10 @@
 """
 这个模块是程序的运行入口，负责连接MySQL数据库、获取参数、启动和管理各个线程（日志管理线程、实时数据管理线程、策略管理线程、开关线程）。
+@Time: 2024/12/7 9:45
+@Author: ysh
+@File: main.py
 """
+from model_train_thread import model_train_thread
 
 " 内置模块 "
 from threading import Thread
@@ -108,8 +112,10 @@ if __name__ == '__main__':
 
     switch_thread = Thread(target=switch_thread,
                            args=(
-                           result_logs[1], result_logs[3], result_logs[4], result_strategy[4], result_real_time[2]))
+                               result_logs[1], result_logs[3], result_logs[4], result_strategy[4], result_real_time[2]))
 
+    model_train_thread = Thread(target=model_train_thread, args=(
+    result_real_time[5], result_real_time[6], result_real_time[7], result_real_time[1],))
     mycursor.close()
     mydb.close()
 
@@ -126,6 +132,9 @@ if __name__ == '__main__':
     if switch_thread:
         switch_thread.start()
 
+    if model_train_thread:
+        model_train_thread.start()
+
     # 阻塞主线程
     if strategy_thread:
         strategy_thread.join()
@@ -138,3 +147,6 @@ if __name__ == '__main__':
 
     if switch_thread:
         switch_thread.join()
+
+if model_train_thread:
+    model_train_thread.join()

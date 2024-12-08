@@ -6,3 +6,4 @@ okx~=2.1.1
 ccxt~=4.4.19
 numpy~=2.1.1
 psutil~=6.1.0
+scikit-learn ~=1.5.2

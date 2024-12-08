@@ -6,7 +6,9 @@
 获取前一天的收盘价。
 实时数据的批量写入数据库操作。
 创建控制程序开关的表。
-
+@Time: 2024/10/1 9:45
+@Author: ysh
+@File: mysqldata.py
 """
 
 import time

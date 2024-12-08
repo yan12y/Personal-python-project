@@ -1,5 +1,8 @@
 """
 这个模块定义了一个实时数据管理线程，用于批处理实时数据队列中的数据并保存到MySQL数据库中。
+@Time: 2024/11/20 9:45
+@Author: ysh
+@File: real_time_data_manager_thread.py
 """
 
 " 内置模块 "
@@ -9,6 +12,7 @@ import time
 import global_vars
 from mymail import send_email
 from mysqldata import real_time_data
+
 
 def real_time_data_manager_thread(host: str, port: int, username: str, password: str, database: str,
                                   sender: str, receiver: str, sender_password: str,

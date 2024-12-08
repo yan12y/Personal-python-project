@@ -4,7 +4,11 @@
 控制线程结束的事件对象。
 日志队列和实时数据队列，用于存储日志信息和实时数据。
 日志表名和实时数据表名，用于根据不同日期创建对应的表。
+@Time: 2024/12/6 9:45
+@Author: ysh
+@File: global_vars.py
 """
+import pandas as pd
 
 " 内置模块 "
 import threading
@@ -26,3 +30,9 @@ log_table_name: str
 
 # 实时数据表名，strategy_manager_thread会根据不同日期创建不同日期的实时数据表名
 data_table_name: str
+
+# 模型训练线程给出的评分结果最好的模型对象,初始化为None
+best_model: object = None
+
+# 模型训练线程给出的没有进行过标准化的特征数据集
+attr_df: pd.DataFrame

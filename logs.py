@@ -4,6 +4,9 @@
 创建日志表。
 记录程序的状态和操作信息到日志表中。
 将日志队列中的日志记录同步到MySQL数据库。
+@Time: 2024/11/8 9:45
+@Author: ysh
+@File: logs.py
 """
 
 import pymysql

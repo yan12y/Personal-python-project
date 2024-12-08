@@ -1,5 +1,8 @@
 """
 这个模块是交易核心，包括交易管理、日志管理、实时数据管理。它负责执行交易策略并管理相关操作。
+@Time: 2024/10/1 9:45
+@Author: ysh
+@File: strategy_manager_thread.py
 """
 
 " 内置模块："
@@ -16,7 +19,7 @@ from mysqldata import get_late_date_prices, sava_all_data_to_mysql, create_contr
 from myokx import MyOkx, get_ticker_last_price
 from logs import create_log_table
 from mymail import send_email
-from strategy import go_long_signal, go_short_signal
+from strategy import go_long_signal, go_short_signal, predict
 from getdata import get_btc_sol_eth_doge_last_price_mean_normalized
 import function
 import global_vars
@@ -356,7 +359,17 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             " 开多仓逻辑 "
             if go_long_signal(long_place_downlimit, long_place_uplimit, p, last_p_p, before_five_current_data_average,
                               current_five_current_data_average, before_mean_normalized, current_mean_normalized,
-                              l_c, l_c_limit, before_bidSz, current_bidSz, before_vol24h, current_vol24h):
+                              l_c, l_c_limit, before_bidSz, current_bidSz, before_vol24h, current_vol24h) and predict(
+                current_price,
+                last_p,
+                before_five_current_data_average,
+                current_five_current_data_average,
+                before_mean_normalized,
+                current_mean_normalized,
+                before_bidSz, current_bidSz,
+                before_askSz,
+                current_askSz,
+                before_vol24h, current_vol24h):
 
                 if current_position_nums > 0 and abs(current_position_nums) >= ppn - 10:
                     global_vars.lq.push(('状态更新', 'Info',
@@ -444,7 +457,17 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             elif go_short_signal(short_place_downlimit, short_place_uplimit, p, last_p_p,
                                  before_five_current_data_average,
                                  current_five_current_data_average, before_mean_normalized, current_mean_normalized,
-                                 s_c, s_c_limit, before_askSz, current_askSz, before_vol24h, current_vol24h):
+                                 s_c, s_c_limit, before_askSz, current_askSz, before_vol24h,
+                                 current_vol24h) and predict(current_price,
+                                                             last_p,
+                                                             before_five_current_data_average,
+                                                             current_five_current_data_average,
+                                                             before_mean_normalized,
+                                                             current_mean_normalized,
+                                                             before_bidSz, current_bidSz,
+                                                             before_askSz,
+                                                             current_askSz,
+                                                             before_vol24h, current_vol24h):
 
                 if current_position_nums < 0 and abs(current_position_nums) >= ppn - 10:
                     global_vars.lq.push(('状态更新', 'Info',
@@ -701,6 +724,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             trade_type = 0  # 初始化交易类型
             # 刷新标准输出缓冲区，使其立即显示在控制台
             sys.stdout.flush()
+
 
         except Exception as e:
             if c < 3:

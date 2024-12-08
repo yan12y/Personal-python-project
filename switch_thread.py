@@ -1,5 +1,8 @@
 """
 这个模块定义了一个开关线程，用于根据MySQL数据库中的'switch'表的值控制程序的退出和运行状态。
+@Time: 2024/11/25 9:45
+@Author: ysh
+@File: switch_thread.py
 """
 " 内置模块 "
 import time

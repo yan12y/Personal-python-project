@@ -1,5 +1,8 @@
 """
 这个模块定义了一个日志管理线程，用于批处理日志队列中的日志并保存到MySQL数据库中。
+@Time: 2024/11/8 9:45
+@Author: ysh
+@File: logs_manager_thread.py
 """
 
 " 内置模块 "
@@ -34,14 +37,16 @@ def logs_manager_thread(mysql_host: str, mysql_username: str, mysql_password: st
             if global_vars.s_finished_event:  # 事件对象被设置，说明s进程结束
                 # 确保r_d的数据被完全写入数据库
                 log_to_mysql(mysql_host=mysql_host, mysql_username=mysql_username, mysql_password=mysql_password,
-                             mysql_database=mysql_database, mysql_log_table=global_vars.log_table_name, max_logs=fq, log_queue=global_vars.lq,
+                             mysql_database=mysql_database, mysql_log_table=global_vars.log_table_name, max_logs=fq,
+                             log_queue=global_vars.lq,
                              mysql_port=mysql_port)
                 break
 
             i = 0  # 重试计数器
             while True:
                 if log_to_mysql(mysql_host=mysql_host, mysql_username=mysql_username, mysql_password=mysql_password,
-                                mysql_database=mysql_database, mysql_log_table=global_vars.log_table_name, max_logs=fq, log_queue=global_vars.lq,
+                                mysql_database=mysql_database, mysql_log_table=global_vars.log_table_name, max_logs=fq,
+                                log_queue=global_vars.lq,
                                 mysql_port=mysql_port) is False:  # 该函数可以一次可以批量处理fq条日志到数据库中
                     if i < 3:  # 最多重试3次
                         print("批量处理日志信息到mysql数据库失败，10秒后重试")
