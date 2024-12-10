@@ -1,15 +1,12 @@
 """
-这个模块定义了一个MyOkx类，封装了与OKX交易所API交互的接口。具体功能包括：
+该模块定义了一个MyOkx类，封装了与OKX交易所API交互的接口。具体功能包括：
 
-获取账户信息。
-设置杠杆倍数。
-下单交易。
-获取仓位信息。
-获取历史K线数据。
-平仓操作。
-@Time: 2024/9/20 9:45
-@Author: ysh
-@File: myokx.py
+- 获取账户信息。
+- 设置杠杆倍数。
+- 下单交易。
+- 获取仓位信息。
+- 获取历史K线数据。
+- 平仓操作。
 """
 
 # 内置模块
@@ -67,7 +64,7 @@ def get_ticker_last_price(instId: str):
         return None
 
 
-class MyOkx():
+class MyOkx:
     """
     注意：访问Okx需要连接vpn。这里面的大部分方法都访问到了Okx。
     这个类封装了Okx的接口，你可以通过这个类来获取账户信息，下单，获取K线数据等。
@@ -206,11 +203,13 @@ class MyOkx():
         self.set_leverage(instId, tdMode, lever)
         # 获取最小下单量的倍数
         minSz = float(get_instId_lotsz(instrument_type='SWAP', instrument_id=instId))
-
         sz = float(minSz * sz)
 
         if sz == 0 or sz <= minSz:
             sz = minSz
+
+        # sz保留一位小数
+        sz = round(sz, 1)
 
         params = {
             "instId": instId,
@@ -221,6 +220,7 @@ class MyOkx():
             "sz": str(sz)  # 假设你需要根据position_nums和lever来计算订单大小
         }
         data = self.trade_api.place_order(**params, **kwargs)
+        print(data)
         if data['code'] != '0':
             return data, 0
         else:

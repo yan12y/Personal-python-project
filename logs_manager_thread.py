@@ -1,8 +1,5 @@
 """
-这个模块定义了一个日志管理线程，用于批处理日志队列中的日志并保存到MySQL数据库中。
-@Time: 2024/11/8 9:45
-@Author: ysh
-@File: logs_manager_thread.py
+该模块定义了一个日志管理线程，用于批处理日志队列中的日志并保存到MySQL数据库中。
 """
 
 " 内置模块 "
@@ -31,15 +28,20 @@ def logs_manager_thread(mysql_host: str, mysql_username: str, mysql_password: st
     :param fq: 一次批处理的日志记录数量
     :return:
     """
+
+    global_vars.lq.push(('日志管理线程-状态信息', 'info', '日志管理线程启动'))
     time.sleep(30)
     while True:
         try:
             if global_vars.s_finished_event:  # 事件对象被设置，说明s进程结束
                 # 确保r_d的数据被完全写入数据库
-                log_to_mysql(mysql_host=mysql_host, mysql_username=mysql_username, mysql_password=mysql_password,
-                             mysql_database=mysql_database, mysql_log_table=global_vars.log_table_name, max_logs=fq,
-                             log_queue=global_vars.lq,
-                             mysql_port=mysql_port)
+                while not global_vars.lq:
+                    log_to_mysql(mysql_host=mysql_host, mysql_username=mysql_username, mysql_password=mysql_password,
+                                 mysql_database=mysql_database, mysql_log_table=global_vars.log_table_name, max_logs=fq,
+                                 log_queue=global_vars.lq,
+                                 mysql_port=mysql_port)
+                    time.sleep(5)
+                print("日志管理线程停止")
                 break
 
             i = 0  # 重试计数器
@@ -55,7 +57,9 @@ def logs_manager_thread(mysql_host: str, mysql_username: str, mysql_password: st
                     else:
                         send_email(sender, receiver, sender_password, subject='来自okx自动化策略程序的运行错误的提醒:',
                                    content='线程：logs_manager_thread\n日志批处理失败\n请检查网络')
-                        break  # 这里后面可以添加发邮件提醒用户功能。
+
+                        global_vars.s_finished_event = True
+
                 else:
                     break  # 如果批量处理日志成功，就跳出循环。
 

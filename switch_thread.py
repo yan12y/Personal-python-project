@@ -1,9 +1,7 @@
 """
-这个模块定义了一个开关线程，用于根据MySQL数据库中的'switch'表的值控制程序的退出和运行状态。
-@Time: 2024/11/25 9:45
-@Author: ysh
-@File: switch_thread.py
+该模块定义了一个开关线程，用于根据MySQL数据库中的'switch'表的值控制程序的退出和运行状态。
 """
+
 " 内置模块 "
 import time
 
@@ -17,16 +15,26 @@ import global_vars
 
 def switch_thread(host: str, username: str, password: str, database: str, port: int = 3306, table: str = 'switch'):
     """
-    这个管理函数会定时从mysql中的database数据库中的'switch'表中获取最后一行的值作为控制程序的退出，当获取的值为1时，它会更改should_exit为False(表示程序保持运行),
-    当当获取的值为0时，更改为False(表示程序停止运行)
-    :param host:
-    :param username:
-    :param password:
-    :param database:
-    :param port:
-    :param table:
-    :return:
-    """
+       开关线程，用于根据MySQL数据库中的'switch'表的值控制程序的退出和运行状态。
+
+       该函数定期从MySQL数据库中查询'switch'表的最新值，以决定程序是否应该继续运行。
+       如果'switch'表中的值为0，则程序将停止运行；如果为1，则程序继续运行。
+
+       参数：
+       - host: MySQL数据库主机地址。
+       - username: MySQL数据库用户名。
+       - password: MySQL数据库密码。
+       - database: 要查询的数据库名称。
+       - port: MySQL数据库端口号，默认为3306。
+       - table: 存储程序开关状态的表名，默认为'switch'。
+
+       返回：
+       - 无返回值，但会根据数据库中的值改变程序的运行状态。
+
+       异常处理：
+       - 如果在数据库查询过程中发生异常，会记录错误信息到日志队列 `global_vars.lq` 中，并设置 `global_vars.s_finished_event` 为 True 以停止程序运行。
+       """
+    global_vars.lq.push(('程序开关管理线程-状态信息', 'info', '程序开关管理线程启动'))
     time.sleep(30)
     while True:
         try:
@@ -37,9 +45,11 @@ def switch_thread(host: str, username: str, password: str, database: str, port: 
                 re = int(df['程序开关'].iloc[0])
                 if re == 0:
                     global_vars.s_finished_event = True
+                    global_vars.next_model_train_sleep_time = 1
                     global_vars.lq.push(('程序状态', 'Info', '程序将停止运行'))
 
             time.sleep(30)
-        except:
+        except Exception as e:
             global_vars.s_finished_event = True
-            raise Exception
+            global_vars.lq.push(('程序开关管理线程-错误信息', 'info', f'程序开关管理线程错误：{e}'))
+            break

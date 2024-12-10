@@ -1,1 +1,17 @@
-{"long_place_downlimit": 0.003, "long_place_uplimit": 0.006, "short_place_downlimit": 0.003, "short_place_uplimit": 0.006, "l_c": 0, "s_c": 0, "u_p_1": 0, "u_p_2": 0, "u_p_3": 0, "u_p_4": 0, "d_p_1": 0, "d_p_2": 0, "d_p_3": 0, "d_p_4": 0, "n_sz": 2}
+{
+    "long_place_downlimit": 0.0032,
+    "long_place_uplimit": 0.0065,
+    "short_place_downlimit": 0.0032,
+    "short_place_uplimit": 0.0065,
+    "l_c": 0,
+    "s_c": 0,
+    "u_p_1": 0,
+    "u_p_2": 0,
+    "u_p_3": 0,
+    "u_p_4": 0,
+    "d_p_1": 0,
+    "d_p_2": 0,
+    "d_p_3": 0,
+    "d_p_4": 0,
+    "n_sz": 6
+}
