@@ -193,7 +193,8 @@ def real_time_data(r_d: list, host: str, port: int, username: str, password: str
             `short_place_downlimit` FLOAT,
             `short_place_uplimit` FLOAT, 
             `当前仓位数量` FLOAT,
-            `交易类型` INT
+            `交易类型` INT,
+            `累计盈亏情况` FLOAT
         )
         """
         cursor.execute(create_table_sql)
@@ -231,9 +232,10 @@ def real_time_data(r_d: list, host: str, port: int, username: str, password: str
             `short_place_downlimit`,
             `short_place_uplimit`,
             `当前仓位数量`,
-            `交易类型`
+            `交易类型`,
+            `累计盈亏情况`
         ) VALUES (
-            %s, %s, %s, %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
+            %s, %s, %s, %s, %s, %s,  %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s
         )
         """
 

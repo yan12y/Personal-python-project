@@ -8,6 +8,8 @@
 - 在达到一定开仓次数后调整开仓上下限，以降低交易频率和风险。
 - 保存和加载交易策略参数到文件。
 """
+import time
+
 from global_vars import lq
 
 " 内置模块 "
@@ -356,7 +358,7 @@ def update_short_place_downlimit_and_short_place_uplimit_for_the_s_c(
 def save_parameter(long_place_downlimit: float, long_place_uplimit: float,
                    short_place_downlimit: float, short_place_uplimit: float,
                    l_c: int, s_c: int, u_p_1: int, u_p_2: int, u_p_3: int, u_p_4: int,
-                   d_p_1: int, d_p_2: int, d_p_3: int, d_p_4: int, n_sz: int, loss: float) -> None:
+                   d_p_1: int, d_p_2: int, d_p_3: int, d_p_4: int, n_sz: int, loss: float, profit: float) -> None:
     """
     保存当前的动态参数到文件。
 
@@ -374,6 +376,7 @@ def save_parameter(long_place_downlimit: float, long_place_uplimit: float,
     - d_p_1 to d_p_4: 跌幅区间1到4的计数器。
     - n_sz: 实际的minSz整数倍。
     - loss: 累计亏损金额(USDT)
+    - profit: 累计盈利金额(USDT)
     返回：
     - 无返回值，函数执行后会将参数保存到文件中。
     """
@@ -394,7 +397,8 @@ def save_parameter(long_place_downlimit: float, long_place_uplimit: float,
         'd_p_3': d_p_3,
         'd_p_4': d_p_4,
         'n_sz': n_sz,
-        'loss': loss
+        'loss': loss,
+        'profit': profit
     }
 
     # 将数据字典转换为JSON字符串并保存到文件
@@ -444,7 +448,8 @@ def load_parameter() -> tuple | None:
             data['d_p_3'],
             data['d_p_4'],
             data['n_sz'],
-            data['loss']
+            data['loss'],
+            data['profit']
         )
     except FileNotFoundError:
         # 如果文件不存在，返回默认值或抛出异常
@@ -505,3 +510,31 @@ def take_progit(o: MyOkx, instId: str, leverage: int, place_uplimit: float, plac
         # 处理可能出现的异常
         print(f"止盈操作异常: {e}")
         return None
+
+
+def statistics_profit(o: MyOkx, trade_type: int, profit: float) -> float:
+    """
+    这个函数会根据交易类型来统计累计盈利情况
+    :param o: MyOkx类的实例，用于与OKX交易所API进行交互。
+    :param trade_type: 发生的交易类型，这里只有-2，2，3值时，才会统计
+    :param profit: 累计盈亏情况
+    :return: 返回累计盈亏情况
+    """
+    if trade_type in [-1, 1, 0]: return profit  # 没有发生止盈止损操作，直接返回
+
+    if trade_type == 3:  # 说明交易类型是止损平仓
+        while True:
+            realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
+            if realizedPnl > 0:  # 如果金额大于0，就继续等待,可能刚刚平仓的仓位信息还没有更新
+                time.sleep(3)
+            else:
+                break
+    else:
+        while True:  # 说明交易类型是止盈平仓
+            realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
+            if realizedPnl < 0:  # 如果金额大于0，就继续等待，可能刚刚平仓的仓位信息还没有更新
+                time.sleep(3)
+            else:
+                break
+
+    return profit + realizedPnl

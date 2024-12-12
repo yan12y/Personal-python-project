@@ -130,7 +130,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
     # 从配置文件中加载下列参数:
     (long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
-     l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss) = function.load_parameter()
+     l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss, profit) = function.load_parameter()
 
     # 昨日收盘价格，初始为0
     last_date_price: float = 0
@@ -560,6 +560,9 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 else:
                     global_vars.lq.push(('交易线程-止损记录', 'Error', '一键止损失败'))
 
+            # 统计盈亏情况
+            profit = function.statistics_profit(o, trade_type, profit)
+
             # 整理需要更新到数据库的数据
             # 格式化列表 d
             d = [
@@ -594,7 +597,8 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 short_place_downlimit,  # 空仓开仓下限
                 short_place_uplimit,  # 空仓开仓上限
                 current_position_nums,  # 当前仓位数量
-                trade_type  # 交易类型
+                trade_type,  # 交易类型
+                profit,  # 累计盈亏情况
             ]
 
             global_vars.r_d.append(d)
@@ -616,7 +620,8 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             try:
                 function.save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit,
                                         short_place_uplimit,
-                                        l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss)
+                                        l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss,
+                                        profit)
                 global_vars.lq.push(('交易线程-参数保存', 'Info', '保存重要参数成功'))
             except Exception as e:
                 global_vars.lq.push(('交易线程-参数保存', 'Error', f'保存重要参数失败:{e}'))
