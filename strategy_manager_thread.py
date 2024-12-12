@@ -512,6 +512,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                 loss = 0  # 获利时 亏损累计清零
 
                                 global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【空,区间计数器触发】成功'))
+
                             else:
                                 global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【空,区间计数器触发】失败'))
                         else:
@@ -552,6 +553,9 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     n_sz = round(n_sz)
                     ppn = ppn + n_sz * current_price / leverage - 20
 
+                    global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新n_sz成功:{n_sz}'))
+                    global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新ppn成功:{ppn}'))
+                    global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新loss成功:{loss}'))
                     global_vars.lq.push(('交易线程-止损记录', 'Success', '一键止损成功'))
                 else:
                     global_vars.lq.push(('交易线程-止损记录', 'Error', '一键止损失败'))
