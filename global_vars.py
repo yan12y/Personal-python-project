@@ -36,3 +36,6 @@ best_model: object = None
 
 # 模型训练线程给出的没有进行过标准化的特征数据集
 attr_df: pd.DataFrame
+
+# 交易对最小交易量
+minSz:float

@@ -356,7 +356,7 @@ def update_short_place_downlimit_and_short_place_uplimit_for_the_s_c(
 def save_parameter(long_place_downlimit: float, long_place_uplimit: float,
                    short_place_downlimit: float, short_place_uplimit: float,
                    l_c: int, s_c: int, u_p_1: int, u_p_2: int, u_p_3: int, u_p_4: int,
-                   d_p_1: int, d_p_2: int, d_p_3: int, d_p_4: int, n_sz: int) -> None:
+                   d_p_1: int, d_p_2: int, d_p_3: int, d_p_4: int, n_sz: int,loss:float) -> None:
     """
     保存当前的动态参数到文件。
 
@@ -373,6 +373,7 @@ def save_parameter(long_place_downlimit: float, long_place_uplimit: float,
     - u_p_1 to u_p_4: 涨幅区间1到4的计数器。
     - d_p_1 to d_p_4: 跌幅区间1到4的计数器。
     - n_sz: 实际的minSz整数倍。
+    - loss: 累计亏损金额
 
     返回：
     - 无返回值，函数执行后会将参数保存到文件中。
@@ -393,7 +394,8 @@ def save_parameter(long_place_downlimit: float, long_place_uplimit: float,
         'd_p_2': d_p_2,
         'd_p_3': d_p_3,
         'd_p_4': d_p_4,
-        'n_sz': n_sz
+        'n_sz': n_sz,
+        'loss': loss
     }
 
     # 将数据字典转换为JSON字符串并保存到文件
@@ -442,7 +444,8 @@ def load_parameter() -> tuple | None:
             data['d_p_2'],
             data['d_p_3'],
             data['d_p_4'],
-            data['n_sz']
+            data['n_sz'],
+            data['loss']
         )
     except FileNotFoundError:
         # 如果文件不存在，返回默认值或抛出异常

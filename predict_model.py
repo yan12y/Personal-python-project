@@ -208,9 +208,9 @@ def data_to_df(orignal_data: pd.DataFrame, current_price: float, last_price: flo
                              current_five_current_data_average - before_five_current_data_average],
                          "新周期主流货币的价格均值与上一周期主流货币的价格均值差": [
                              current_mean_normalized - before_mean_normalized],
-                         "新周期bisSz与上一周期的bisSz差": [current_bidSz - before_bidSz],
-                         "新周期askSz与上一周期的askSz差": [current_askSz - before_askSz],
-                         "新周期24小时交易量与上一周期的24小时交易量差": [current_vol24h - before_vol24h]})
+                         "新周期bisSz与上一周期的bisSz差": [float(current_bidSz) - float(before_bidSz)],
+                         "新周期askSz与上一周期的askSz差": [float(current_askSz) - float(before_askSz)],
+                         "新周期24小时交易量与上一周期的24小时交易量差": [float(current_vol24h) - float(before_vol24h)]})
     # 将数据添加到DataFrame中
     all_df = pd.concat([orignal_data, data], ignore_index=True)
 

@@ -39,7 +39,7 @@ def go_long_signal(long_place_downlimit: float, long_place_uplimit: float, p: fl
             float(before_mean_normalized) <= float(current_mean_normalized) and
             l_c <= l_c_limit and
             float(before_bidSz) < float(current_bidSz) and
-            before_vol24h < current_vol24h and
+            float(before_vol24h) < float(current_vol24h) and
             last_p_p > 0):
 
         return True
@@ -82,7 +82,7 @@ def go_short_signal(short_place_downlimit: float, short_place_uplimit: float, p:
             float(before_mean_normalized) >= float(current_mean_normalized) and
             s_c <= s_c_limit and
             float(before_askSz) <= float(current_askSz) and
-            before_vol24h <= current_vol24h and
+            float(before_vol24h) <= float(current_vol24h) and
             last_p_p < 0):
         return True
     else:

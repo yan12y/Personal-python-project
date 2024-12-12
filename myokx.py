@@ -19,6 +19,8 @@ from okx.Account import AccountAPI
 from okx.MarketData import MarketAPI
 from okx.Trade import TradeAPI
 
+import global_vars
+
 
 def get_instId_lotsz(instrument_type, instrument_id):
     """
@@ -203,6 +205,8 @@ class MyOkx:
         self.set_leverage(instId, tdMode, lever)
         # 获取最小下单量的倍数
         minSz = float(get_instId_lotsz(instrument_type='SWAP', instrument_id=instId))
+        global_vars.minSz = minSz
+
         sz = float(minSz * sz)
 
         if sz == 0 or sz <= minSz:
@@ -363,3 +367,18 @@ class MyOkx:
                     return -1
 
         return None  # 如果没有进行任何平仓操作，返回 None
+
+
+    def get_positions_history(self):
+        """
+        返回最新的历史仓位信息
+        :return:
+        """
+        # 获取历史持仓信息
+        positions_history = self.account.get_positions_history(instType='SWAP', instId='ETH-USDT-SWAP')
+        return positions_history['data'][0]
+
+# o = MyOkx('1929733e-1916-474f-a7f0-e663c97a06a1','FCB7202B08EF0B2396DF160C16EC5DE0','Yshhsq31!')
+# d = o.get_positions_history()
+# print(d)
+

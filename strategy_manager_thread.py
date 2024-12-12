@@ -101,7 +101,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
     :param limit_uplRatio: 为实现收益额 / 保证金（止损最大比值）
     :return: 无返回值，此线程函数负责执行交易策略并管理相关操作。
     """
-    global_vars.lq.push(('交易线程-状态信息','info','交易线程启动')) # 启动交易线程
+    global_vars.lq.push(('交易线程-状态信息', 'info', '交易线程启动'))  # 启动交易线程
     ppn = place_position_nums  # 计划持仓时，实际拥有的最大头寸数量
     before_mean_normalized: float = 0  # 上一次btc,sol,eth,doge的实时价格标准化均值
     before_five_current_data_average = 0  # 上一次五个当前交易对的实时价格的平均值
@@ -130,7 +130,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
     # 从配置文件中加载下列参数:
     (long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
-     l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz) = function.load_parameter()
+     l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss) = function.load_parameter()
 
     # 昨日收盘价格，初始为0
     last_date_price: float = 0
@@ -174,7 +174,6 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 today_str = today.replace('-', '_')
                 log_table = f'{today_str}_{leverage}X_logs'  # 创建用于存储新的一天的日志数据的新表名
                 global_vars.log_table_name = log_table
-
 
                 # 在数据库中创建日志表
                 if create_log_table(mysql_host=mysql_host, mysql_port=mysql_port, mysql_username=mysql_username,
@@ -320,7 +319,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 top_five_current_data.pop(0)
                 top_five_current_data.append(current_price)
 
-            """ 开仓逻辑和盈利逻辑 """
+            " 开仓逻辑 "
             # 开多仓逻辑
             if go_long_signal(long_place_downlimit, long_place_uplimit, p, last_p_p, before_five_current_data_average,
                               current_five_current_data_average, before_mean_normalized, current_mean_normalized,
@@ -336,15 +335,11 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 current_askSz,
                 before_vol24h, current_vol24h):
 
-                if current_position_nums > 0 and abs(current_position_nums) >= ppn - 10:
-                    global_vars.lq.push(('交易线程-状态更新', 'Info',
-                                         f'当前价格{current_price}在开多仓的区间内，但已经有多仓大于等于{ppn - 10}USDT的仓位存在！不开仓'))
-
-                elif (current_position_nums > 0 and abs(current_position_nums) < ppn - 10) or (
-                        current_position_nums < 0) or (current_position_nums == 0):
+                if (current_position_nums <= 0) or (
+                        current_position_nums > 0 and abs(current_position_nums) < ppn - 10):
                     """ 
                     三种开多仓的情况：
-                        1. 当前有多仓，但仓位小于ppn-10USDT，则可以继续开多仓
+                        1. 当前有多仓，但仓位小于ppn-10 USDT，则可以继续开多仓
                         2. 当前有空仓，则可以开多仓
                         3. 当前无仓，则可以开多仓
                     """
@@ -388,23 +383,18 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                                              current_askSz,
                                                              before_vol24h, current_vol24h):
 
-                if current_position_nums < 0 and abs(current_position_nums) >= ppn - 10:
-                    global_vars.lq.push(('交易线程-状态更新', 'Info',
-                                         f'当前价格{current_price}在开空仓的区间内，但当前已经有空仓大于等于{ppn - 10}USDT的仓位存在！不开仓'))
-
-                elif (current_position_nums > 0) or (
-                        current_position_nums < 0 and abs(current_position_nums) < ppn - 10) or (
-                        current_position_nums == 0):
+                if (current_position_nums >= 0) or (
+                        current_position_nums < 0 and abs(current_position_nums) < ppn - 10):
                     """
                     三种开空仓的情况：
                         1.当前持有多仓，直接开空仓
-                        2. 当前有持空仓，但持仓小于等于ppn-10USDT，直接开空仓
+                        2. 当前有持空仓，但持仓小于ppn-10 USDT，直接开空仓
                         3. 当前没有持仓，直接开空仓   
                     """
                     d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='sell', ordType='market',
                                                     lever=leverage, sz=n_sz)
                     if d['code'] != '0':
-                        global_vars.lq.push(('交易线程-交易记录', 'Error', f'卖出失败'))
+                        global_vars.lq.push(('交易线程-交易记录', 'Error', f'买入失败:{d}'))
                     else:
                         global_vars.lq.push(('交易线程-交易记录', 'Success', f'卖出成功'))
 
@@ -425,8 +415,8 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                             place_downlimit=place_downlimit, place_uplimit=place_uplimit)
                         trade_type = -1
 
-            # 这是仓位获利逻辑。
-            elif p > 0.012 or p < - 0.012:
+            " 获利逻辑 "
+            if p > 0.012 or p < - 0.012:
 
                 today_positions = o.get_positions()  # 获取所有仓位信息
                 # 获得instId类型的仓位信息
@@ -449,8 +439,11 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                          long_place_uplimit, long_place_downlimit, short_place_uplimit,
                                          short_place_downlimit,
                                          l_c, s_c) = re
+
                                         ppn = place_position_nums
                                         n_sz = sz
+                                        loss = 0  # 获利累计清零
+
                                         global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【多,超0.25方向】成功'))
                                         break
                                     else:
@@ -468,8 +461,11 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                          long_place_uplimit, long_place_downlimit, short_place_uplimit,
                                          short_place_downlimit,
                                          l_c, s_c) = re
+
                                         ppn = place_position_nums
                                         n_sz = sz
+                                        loss = 0  # 获利 亏损累计清零
+
                                         global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【空,超0.25方向】成功'))
                                         break
                                     else:
@@ -488,8 +484,11 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                  long_place_uplimit, long_place_downlimit, short_place_uplimit,
                                  short_place_downlimit,
                                  l_c, s_c) = re
+
                                 ppn = place_position_nums
                                 n_sz = sz
+                                loss = 0  # 获利 亏损累计清零
+
                                 global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【多,区间计数器触发】成功'))
                             else:
                                 global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【多,区间计数器触发】失败'))
@@ -507,8 +506,11 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                  long_place_uplimit, long_place_downlimit, short_place_uplimit,
                                  short_place_downlimit,
                                  l_c, s_c) = re
+
                                 ppn = place_position_nums
                                 n_sz = sz
+                                loss = 0  # 获利时 亏损累计清零
+
                                 global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【空,区间计数器触发】成功'))
                             else:
                                 global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【空,区间计数器触发】失败'))
@@ -519,20 +521,37 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                     global_vars.lq.push(('交易线程-状态更新', 'Info', f'当前没有持有{instId}类型的仓位'))
 
-            # 当任何条件都不满足，就休息一段时间，避免频繁请求。
-            else:
-                global_vars.lq.push(('交易线程-状态更新', 'Info', '当前价格不符合开仓条件,也不符合获利条件'))
-
+            " 止损逻辑 "
             # 如果是亏损状态，下面方法会自动判断是否符合止损条件，然后一键平仓
             close_positions_re = o.close_positions(instId=instId, leverage=leverage, ordType='market', tdMode='cross',
                                                    limit_uplRatio=limit_uplRatio)
-
             if close_positions_re:
                 if close_positions_re == 1:
                     trade_type = 3
-                    # 止损后，如果下一次开仓加倍
-                    n_sz += 1
-                    ppn = ppn + 25
+
+                    # 获取刚刚平仓的历史仓位信息
+                    while True:
+                        last_loss = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
+                        if last_loss > 0:  # 如果金额大于0，就继续等待
+                            global_vars.lq.push(('交易线程-止损记录', 'Info', '等待平仓历史仓位信息更新'))
+                            time.sleep(3)
+                        else:
+                            global_vars.lq.push(
+                                ('交易线程-止损记录', 'Success', '平仓历史仓位信息更新成功,成功获取亏损金额'))
+                            break
+
+                    # 获取亏损金额
+                    loss = float(loss) + abs(last_loss)
+                    # 计算下一次大概的盈利金额
+                    profit = loss * 2
+                    # 下一次计划持仓量
+                    x = (profit / 0.5) * leverage  # 假设0.5是下一次盈利的收益率
+                    # 更新n_sz
+                    n_sz = (x / current_price) * leverage
+                    # 取整
+                    n_sz = round(n_sz)
+                    ppn = ppn + n_sz * current_price / leverage - 20
+
                     global_vars.lq.push(('交易线程-止损记录', 'Success', '一键止损成功'))
                 else:
                     global_vars.lq.push(('交易线程-止损记录', 'Error', '一键止损失败'))
@@ -593,7 +612,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             try:
                 function.save_parameter(long_place_downlimit, long_place_uplimit, short_place_downlimit,
                                         short_place_uplimit,
-                                        l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz)
+                                        l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss)
                 global_vars.lq.push(('交易线程-参数保存', 'Info', '保存重要参数成功'))
             except Exception as e:
                 global_vars.lq.push(('交易线程-参数保存', 'Error', f'保存重要参数失败:{e}'))
