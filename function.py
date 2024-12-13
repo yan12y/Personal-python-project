@@ -150,13 +150,13 @@ def update_u_p_and_d_p(u_p_1: int, d_p_1: int, u_p_2: int, d_p_2: int, u_p_3: in
         u_p_4 += 1
 
     # 更新跌幅区间计数器
-    if s_s1 < p <= s_e1:
+    if s_s1 >= p >= s_e1:
         d_p_1 += 1
-    if s_s2 < p <= s_e2:
+    if s_s2 >= p >= s_e2:
         d_p_2 += 1
-    if s_s3 < p <= s_e3:
+    if s_s3 >= p >= s_e3:
         d_p_3 += 1
-    if s_s4 < p <= s_e4:
+    if s_s4 >= p >= s_e4:
         d_p_4 += 1
 
     return u_p_1, d_p_1, u_p_2, d_p_2, u_p_3, d_p_3, u_p_4, d_p_4
@@ -536,5 +536,3 @@ def statistics_profit(o: MyOkx, trade_type: int, profit: float) -> float:
                 time.sleep(3)
             else:
                 return profit + realizedPnl
-
-

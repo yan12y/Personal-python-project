@@ -306,6 +306,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                                                                                  s_s4
                                                                                                  , s_e1, s_e2, s_e3,
                                                                                                  s_e4)
+
             # 计算前五个周期当前交易类型的价格平均值
             if len(top_five_current_data) < 5:  # top_five_current_data是一个列表，放有前五个周期当前交易类型的最新价格数据
                 top_five_current_data.append(current_price)  # 将最新的一个周期最新价格数据添加到列表中
