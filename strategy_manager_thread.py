@@ -467,8 +467,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                         global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【空,超0.25方向】失败'))
 
                         # 由区间的计数器触发止盈的操作
-                        elif (u_p_1 > 20 and today_pos > 0) or (u_p_2 > 27 and today_pos > 0) or (
-                                u_p_3 > 40 and today_pos > 0) or (u_p_4 > 6 and today_pos > 0):
+                        elif today_pos > 0 and ( (u_p_1 > 20) or (u_p_2 > 27) or (u_p_3 > 40) or (u_p_4 > 6)):
                             trade_type = 2
                             re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                       place_uplimit=place_uplimit,
@@ -489,8 +488,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                 global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【多,区间计数器触发】失败'))
 
                         # 如果d_p_1,到d_p_4其中一个大于设定值，且持有空仓，那么就平空仓。
-                        elif (d_p_1 > 10 and today_pos < 0) or (d_p_2 > 13 and today_pos < 0) or (
-                                d_p_3 > 20 and today_pos < 0) or (d_p_4 > 3 and today_pos < 0):
+                        elif today_pos < 0 and ( (d_p_1 > 10) or (d_p_2 > 13) or (d_p_3 > 20) or (d_p_4 > 3)):
                             trade_type = -2
                             re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                       place_uplimit=place_uplimit,

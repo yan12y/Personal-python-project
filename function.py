@@ -140,13 +140,13 @@ def update_u_p_and_d_p(u_p_1: int, d_p_1: int, u_p_2: int, d_p_2: int, u_p_3: in
     - 更新后的各个价格变动区间的计数器 u_p_1 到 u_p_4 和 d_p_1 到 d_p_4。
     """
     # 更新涨幅区间计数器
-    if l_s1 < p <= l_e1:
+    if l_s1 <= p <= l_e1:
         u_p_1 += 1
-    if l_s2 < p <= l_e2:
+    if l_s2 <= p <= l_e2:
         u_p_2 += 1
-    if l_s3 < p <= l_e3:
+    if l_s3 <= p <= l_e3:
         u_p_3 += 1
-    if l_s4 < p <= l_e4:
+    if l_s4 <= p <= l_e4:
         u_p_4 += 1
 
     # 更新跌幅区间计数器
