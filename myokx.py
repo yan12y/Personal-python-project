@@ -377,8 +377,3 @@ class MyOkx:
         # 获取历史持仓信息
         positions_history = self.account.get_positions_history(instType='SWAP', instId='ETH-USDT-SWAP')
         return positions_history['data'][0]
-
-# o = MyOkx('1929733e-1916-474f-a7f0-e663c97a06a1','FCB7202B08EF0B2396DF160C16EC5DE0','Yshhsq31!')
-# d = o.get_positions_history()
-# print(d)
-

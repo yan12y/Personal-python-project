@@ -123,7 +123,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
     random_start = 10  # 随机时间的左区间
     random_end = 20  # 随机时间的右区间
 
-    last_p = 0  # 上一次循环的价格
+    before_price: float = 0  # 上一次循环的价格
 
     # 实例化MyOkx实例
     o = MyOkx(okx_api_key, okx_secret_key, okx_passphrase)
@@ -266,41 +266,35 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     place_downlimit=place_downlimit)
 
             " 交易前准备 "
-            current_coin_data, current_price = get_ticker_last_price(instId)  # 获取当前交易类型的信息，当前价格
-            current_bidSz, current_askSz = current_coin_data["bidSz"], current_coin_data["askSz"]
-            current_vol24h = current_coin_data['vol24h']
-
+            current_coin_data, current_price = get_ticker_last_price(instId)  # 获取当前交易类型的最新信息和最新价格信息
+            current_bidSz, current_askSz = float(current_coin_data["bidSz"]), float(
+                current_coin_data["askSz"])  # 从交易类型的最新信息中获取当前交易类类型的最新买卖深度
+            current_vol24h = float(current_coin_data['vol24h'])  # 从交易类型的最新信息中获取当前交易类型的24小时交易量
             current_mean_normalized = get_btc_sol_eth_doge_last_price_mean_normalized()  # 获取BTC,SOL,ETH,DOGE的最新价格标准化的平均值
-
             now = datetime.datetime.now()  # 获取此时的时间
-            # 格式化日期和时间
-            formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")
+            formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")  # 格式化日期和时间
+            current_position_nums = 0  # 当前instId类型的仓位头寸，初始化为0
 
             current_positions = o.get_positions()  # 获取所有仓位信息
-
-            current_position_nums = 0  # 当前instId类型的仓位头寸，初始化为0
-            if current_positions:
-                # 检查所有仓位信息中有没有 ETH-USDT-SWAP的仓位
+            if current_positions:  # 如果有当前交易类型的仓位，那么获取当前交易类型的头寸信息，注意，可能存在多头和空头的仓位，所以头寸信息空头取负值，多头取正值
                 for position in current_positions:
-                    if position["instId"] == instId:
+                    if position["instId"] == instId:  # 只获取当前交易类型的仓位信息
                         pos = float(position["pos"])
-                        if pos < 0:  # 说明是空头仓位
-                            current_position_nums = float(position["notionalUsd"])
+                        if pos < 0:  # 说明当前交易类型有空头仓位
+                            current_position_nums = float(position["notionalUsd"])  # 获取空头仓位头寸信息，取负值
                             current_position_nums = -current_position_nums
                             break
-                        elif pos > 0:  # 说明是多头仓位
-                            current_position_nums = float(position["notionalUsd"])
+                        elif pos > 0:  # 说明当前交易类型有多头仓位
+                            current_position_nums = float(position["notionalUsd"])  # 获取多头仓位头寸信息，取正值
                             break
-                            # 注意：运行到这里，current_position_nums可正，可负的。正表示是多头仓位的头寸，负表示是空头仓位头寸
 
-            p = (current_price - last_date_price) / last_date_price  # 这是昨天收盘价和当前价格的百分比变化
+            p = (current_price - last_date_price) / last_date_price  # 计算当前最新价格较昨收盘价的变化百分比变化
 
-            if last_p != 0:  # 避免第一次运行，导致last_p为0
-                last_p_p = (current_price - last_p) / last_p  # 当前价格和上一次价格的百分比变化
+            # 计算当前最新价格较上一周期价格的变化百分比变化
+            if before_price != 0:  # 程序初次运行last_p被初始化为0，避免初次运行出现零除
+                last_p_p = (current_price - before_price) / before_price
 
-            # last_p_p ,p这个参数对整个交易逻辑和获利逻辑有着非常大的关系，同时它会影响u_p和d_p的变化。
-
-            # 根据p值来更新u_p_1,d_p_1,u_p_2,d_p_2,u_p_3,d_p_3,u_p_4,d_p_4
+            # 根据p值所落在哪一个区间上来更新这些区间计数器：u_p_1到u_p_4，d_p_1到d_p_4
             u_p_1, d_p_1, u_p_2, d_p_2, u_p_3, d_p_3, u_p_4, d_p_4 = function.update_u_p_and_d_p(u_p_1, d_p_1, u_p_2,
                                                                                                  d_p_2,
                                                                                                  u_p_3, d_p_3, u_p_4,
@@ -312,12 +306,12 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                                                                                  s_s4
                                                                                                  , s_e1, s_e2, s_e3,
                                                                                                  s_e4)
-            if len(top_five_current_data) < 5:
-                top_five_current_data.append(current_price)
-            if len(top_five_current_data) == 5:
+            # 计算前五个周期当前交易类型的价格平均值
+            if len(top_five_current_data) < 5:  # top_five_current_data是一个列表，放有前五个周期当前交易类型的最新价格数据
+                top_five_current_data.append(current_price)  # 将最新的一个周期最新价格数据添加到列表中
+            if len(top_five_current_data) == 5:  # 当top_five_current_data列表中已有五个元素时，计算前五个周期当前交易类型的最新价格平均值
                 current_five_current_data_average = sum(top_five_current_data) / 5
-                top_five_current_data.pop(0)
-                top_five_current_data.append(current_price)
+                top_five_current_data.pop(0)  # pop(0)表示删除列表中第一个元素，即删除最旧的一个周期数据
 
             " 开仓逻辑 "
             # 开多仓逻辑
@@ -325,7 +319,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                               current_five_current_data_average, before_mean_normalized, current_mean_normalized,
                               l_c, l_c_limit, before_bidSz, current_bidSz, before_vol24h, current_vol24h) and predict(
                 current_price,
-                last_p,
+                before_price,
                 before_five_current_data_average,
                 current_five_current_data_average,
                 before_mean_normalized,
@@ -344,7 +338,8 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         3. 当前无仓，则可以开多仓
                     """
                     d, Sz = o.place_agreement_order(instId=instId, tdMode='cross', side='buy', ordType='market',
-                                                    lever=leverage, sz=n_sz)
+                                                    lever=leverage,
+                                                    sz=n_sz)  # d包含了交易操作后返回的结果信息，Sz是下单的实际数量：Sz = n_sz * minSz，n_sz是minSz的整数倍
                     if d['code'] != '0':
                         global_vars.lq.push(('交易线程-交易记录', 'Error', f'买入失败:{d}'))
                     else:
@@ -363,7 +358,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         short_place_downlimit, short_place_uplimit = (
                             function.update_short_place_uplimit_and_short_place_downlimit(
                                 short_place_downlimit=short_place_downlimit, short_place_uplimit=short_place_uplimit,
-                                last_p=last_p, current_price=current_price,
+                                before_price=before_price, current_price=current_price,
                                 place_downlimit=place_downlimit, place_uplimit=place_uplimit))
                         trade_type = 1
 
@@ -373,7 +368,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                  current_five_current_data_average, before_mean_normalized, current_mean_normalized,
                                  s_c, s_c_limit, before_askSz, current_askSz, before_vol24h,
                                  current_vol24h) and predict(current_price,
-                                                             last_p,
+                                                             before_price,
                                                              before_five_current_data_average,
                                                              current_five_current_data_average,
                                                              before_mean_normalized,
@@ -411,37 +406,37 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         #  如果交易成功，根据当前价格和上一次价格，调整下一次反转时开仓区间。
                         long_place_downlimit, long_place_uplimit = function.update_long_place_uplimit_and_long_place_downlimit(
                             long_place_downlimit=long_place_downlimit, long_place_uplimit=long_place_uplimit,
-                            last_p=last_p, current_price=current_price,
+                            before_price=before_price, current_price=current_price,
                             place_downlimit=place_downlimit, place_uplimit=place_uplimit)
                         trade_type = -1
 
             " 获利逻辑 "
             if p > 0.012 or p < - 0.012:
 
-                today_positions = o.get_positions()  # 获取所有仓位信息
-                # 获得instId类型的仓位信息
-                for position in today_positions:
+                for position in current_positions:  # 遍历持仓列表获取当前仓位信息
                     if position["instId"] == instId:
-                        today_pos = float(position["pos"])
+                        today_pos = float(position["pos"])  # 获取持仓方向，1为多仓，-1为空仓
 
-                        # 如果涨幅超过0.25 或者 跌幅超过0.25，那么就止盈
+                        # 如果涨幅超过25% 或者 跌幅超过25% ，那么就止盈
                         if p > 0.25 or p < -0.25:
                             while True:
 
-                                if today_pos > 0:  # 多仓获利，对应(current_price-last_date_price) /last_date_price > 0.05的情况
-                                    trade_type = 2
+                                if today_pos > 0:  # 多仓获利，对应p超过25%的情况
+                                    trade_type = 2  # 设置交易类型为2，表示止盈
                                     re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                               place_uplimit=place_uplimit,
-                                                              place_downlimit=place_downlimit)
+                                                              place_downlimit=place_downlimit)  # 执行止盈操作
+
+                                    # 如果止盈操作成功，take_progit会返回需要初始化的参数元组，如果止盈操作失败会返回None
                                     if re:
                                         (u_p_1, d_p_1, u_p_2, d_p_2, u_p_3, d_p_3, u_p_4, d_p_4, random_start,
                                          random_end,
                                          long_place_uplimit, long_place_downlimit, short_place_uplimit,
                                          short_place_downlimit,
-                                         l_c, s_c) = re
+                                         l_c, s_c) = re  # 解包返回的元组，获取需要初始化的参数
 
-                                        ppn = place_position_nums
-                                        n_sz = sz
+                                        ppn = place_position_nums  # ppn更新为用户配置的参数
+                                        n_sz = sz  # n_sz更新为用户配置的参数
                                         loss = 0  # 获利累计清零
 
                                         global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【多,超0.25方向】成功'))
@@ -449,8 +444,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                     else:
                                         global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【多,超0.25方向】失败'))
 
-                                elif today_pos < 0:  # 空仓获利，对应(current_price-last_date_price) /last_date_price <
-                                    # -0.05的情况
+                                elif today_pos < 0:  # 空仓获利，对应p超过-25%的情况
                                     trade_type = -2
                                     re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                               place_uplimit=place_uplimit,
@@ -464,14 +458,14 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                                         ppn = place_position_nums
                                         n_sz = sz
-                                        loss = 0  # 获利 亏损累计清零
+                                        loss = 0
 
                                         global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【空,超0.25方向】成功'))
                                         break
                                     else:
                                         global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【空,超0.25方向】失败'))
 
-                        # 如果u_p_1,到u_p_4其中一个大于设定值，且持有多仓，那么就平多仓
+                        # 由区间的计数器触发止盈的操作
                         elif (u_p_1 > 20 and today_pos > 0) or (u_p_2 > 27 and today_pos > 0) or (
                                 u_p_3 > 40 and today_pos > 0) or (u_p_4 > 6 and today_pos > 0):
                             trade_type = 2
@@ -487,7 +481,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                                 ppn = place_position_nums
                                 n_sz = sz
-                                loss = 0  # 获利 亏损累计清零
+                                loss = 0
 
                                 global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【多,区间计数器触发】成功'))
                             else:
@@ -509,7 +503,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                                 ppn = place_position_nums
                                 n_sz = sz
-                                loss = 0  # 获利时 亏损累计清零
+                                loss = 0
 
                                 global_vars.lq.push(('交易线程-止盈记录', 'Success', '止盈【空,区间计数器触发】成功'))
 
@@ -523,12 +517,12 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     global_vars.lq.push(('交易线程-状态更新', 'Info', f'当前没有持有{instId}类型的仓位'))
 
             " 止损逻辑 "
-            # 如果是亏损状态，下面方法会自动判断是否符合止损条件，然后一键平仓
+            # 进入close_positions方法,这个方法会获取亏损比然后根据用户配置的limit_uplRatio决定是否执行止损操作
             close_positions_re = o.close_positions(instId=instId, leverage=leverage, ordType='market', tdMode='cross',
                                                    limit_uplRatio=limit_uplRatio)
-            if close_positions_re:
-                if close_positions_re == 1:
-                    trade_type = 3
+            if close_positions_re:  # close_positions没有返回None值，说明没有出现什么错误。
+                if close_positions_re == 1:  # 发生了止损操作
+                    trade_type = 3  # 交易类型标记为3，表示止损操作
 
                     # 获取刚刚平仓的历史仓位信息
                     while True:
@@ -564,11 +558,10 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             profit = function.statistics_profit(o, trade_type, profit)
 
             # 整理需要更新到数据库的数据
-            # 格式化列表 d
             d = [
                 formatted_now,  # 当前时间
                 current_price,  # 当前价格
-                last_p,  # 上一次价格
+                before_price,  # 上一次价格
                 p,  # 较昨天的涨跌幅
                 last_p_p,  # 上一次价格和前一次价格的涨跌幅
                 before_five_current_data_average,  # 上一次五个当前价格的平均值
@@ -601,20 +594,22 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 profit,  # 累计盈亏情况
             ]
 
-            global_vars.r_d.append(d)
+            global_vars.r_d.append(d)  # 将数据添加到实时数据队列中
 
             # 更新上次前五个的当前价格平均值为当前前五个的当前价格平均值
             before_five_current_data_average = current_five_current_data_average
             # before_bidSz为当前bidSz,跟新before_askSz为当前askSz
             before_bidSz, before_askSz = current_bidSz, current_askSz
-            # 更新上一次24小时交易量
+            # 更新上一周期的24小时交易量
             before_vol24h = current_vol24h
-            # 更新上一次btc,sol,eth,doge的价格标准化均值
+            # 更新上一周期btc,sol,eth,doge的价格标准化均值
             before_mean_normalized = current_mean_normalized
+            # 更新上一周期价格
+            before_price = current_price
 
-            # 更新随机休眠时间和上一次循环的价格，用于下次循环
-            random_start, random_end = function.modulate_randomtime(random_start, random_end, last_p, current_price)
-            last_p = current_price  # 更新上一次循环的价格，这参数必须一次循环更新一次
+            # 更新随机休眠时间的区间，用于下次循环
+            random_start, random_end = function.modulate_randomtime(random_start, random_end, before_price,
+                                                                    current_price)
 
             # 及时保存重要参数
             try:

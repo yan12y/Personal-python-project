@@ -20,25 +20,25 @@ from myokx import MyOkx
 
 
 # 根据市场价格变动调整随机休眠时间区间的函数
-def modulate_randomtime(random_start: int, random_end: int, last_p: float, current_price: float) -> (int, int):
+def modulate_randomtime(random_start: int, random_end: int, before_price: float, current_price: float) -> (int, int):
     """
     根据市场价格变动调整随机休眠时间区间。
 
     参数：
     - random_start: 随机休眠时间区间的左区间，表示休眠时间的最小值（秒）。
     - random_end: 随机休眠时间区间的右区间，表示休眠时间的最大值（秒）。
-    - last_p: 上一次循环的价格，用于与当前价格比较，计算价格变动百分比。
+    - before_price: 上一次循环的价格，用于与当前价格比较，计算价格变动百分比。
     - current_price: 当前的价格，用于与上一次循环的价格比较，计算价格变动百分比。
 
     返回：
     - 调整后的随机休眠时间区间（random_start, random_end）。
     """
     # 避免除以零的情况
-    if last_p == 0:
+    if before_price == 0:
         return random_start, random_end
 
     # 计算价格变动百分比
-    last_p_p = abs((current_price - last_p) / last_p) if last_p != 0 else 0
+    last_p_p = abs((current_price - before_price) / before_price) if before_price != 0 else 0
 
     # 根据价格变动百分比调整随机休眠时间区间
     if last_p_p >= 0.01:
@@ -166,7 +166,7 @@ def update_u_p_and_d_p(u_p_1: int, d_p_1: int, u_p_2: int, d_p_2: int, u_p_3: in
 def update_short_place_uplimit_and_short_place_downlimit(
         short_place_downlimit: float,
         short_place_uplimit: float,
-        last_p: float,
+        before_price: float,
         current_price: float,
         place_downlimit: float,
         place_uplimit: float
@@ -181,7 +181,7 @@ def update_short_place_uplimit_and_short_place_downlimit(
     参数：
     - short_place_downlimit: 当前空仓的下限，表示空仓可以触发的价格下限。
     - short_place_uplimit: 当前空仓的上限，表示空仓可以触发的价格上限。
-    - last_p: 上一次循环的价格，用于与当前价格比较，计算价格变动百分比。
+    - before_price: 上一次循环的价格，用于与当前价格比较，计算价格变动百分比。
     - current_price: 当前的价格，用于与上一次循环的价格比较，计算价格变动百分比。
     - place_downlimit: 用户设定的开仓跌幅下限，用于确定调整后的空仓下限。
     - place_uplimit: 用户设定的开仓涨幅上限，用于确定调整后的空仓上限。
@@ -189,11 +189,11 @@ def update_short_place_uplimit_and_short_place_downlimit(
     返回：
     - 调整后的空仓上下限（short_place_uplimit, short_place_downlimit）。
     """
-    if last_p == 0:  # 避免除以零
+    if before_price == 0:  # 避免除以零
         return short_place_downlimit, short_place_uplimit
 
     # 计算价格变动百分比
-    last_p_p = (current_price - last_p) / last_p if last_p != 0 else 0
+    last_p_p = (current_price - before_price) / before_price if before_price != 0 else 0
 
     # 根据价格变动百分比调整空仓上下限
     if 0 < last_p_p < 0.0005:  # 涨幅变化不高，发生反转的可能性最大
@@ -227,7 +227,7 @@ def update_short_place_uplimit_and_short_place_downlimit(
 def update_long_place_uplimit_and_long_place_downlimit(
         long_place_downlimit: float,
         long_place_uplimit: float,
-        last_p: float,
+        before_price: float,
         current_price: float,
         place_downlimit: float,
         place_uplimit: float
@@ -242,7 +242,7 @@ def update_long_place_uplimit_and_long_place_downlimit(
     参数：
     - long_place_downlimit: 当前多仓的下限，表示多仓可以触发的价格下限。
     - long_place_uplimit: 当前多仓的上限，表示多仓可以触发的价格上限。
-    - last_p: 上一次循环的价格，用于与当前价格比较，计算价格变动百分比。
+    - before_price: 上一次循环的价格，用于与当前价格比较，计算价格变动百分比。
     - current_price: 当前的价格，用于与上一次循环的价格比较，计算价格变动百分比。
     - place_downlimit: 用户设定的开仓跌幅下限，用于确定调整后的多仓下限。
     - place_uplimit: 用户设定的开仓涨幅上限，用于确定调整后的多仓上限。
@@ -250,11 +250,11 @@ def update_long_place_uplimit_and_long_place_downlimit(
     返回：
     - 调整后的多仓上下限（long_place_uplimit, long_place_downlimit）。
     """
-    if last_p == 0:  # 避免除以零
+    if before_price == 0:  # 避免除以零
         return long_place_downlimit, long_place_uplimit
 
     # 计算价格变动百分比
-    last_p_p = (current_price - last_p) / last_p if last_p != 0 else 0
+    last_p_p = (current_price - before_price) / before_price if before_price != 0 else 0
 
     # 根据价格变动百分比调整多仓上下限
     if -0.0005 < last_p_p < 0.0005:  # 价格变动不大，微调多仓区间
@@ -524,17 +524,17 @@ def statistics_profit(o: MyOkx, trade_type: int, profit: float) -> float:
 
     if trade_type == 3:  # 说明交易类型是止损平仓
         while True:
-            realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
+            realizedPnl = -float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
             if realizedPnl > 0:  # 如果金额大于0，就继续等待,可能刚刚平仓的仓位信息还没有更新
                 time.sleep(3)
             else:
-                break
+                return profit + realizedPnl
     else:
         while True:  # 说明交易类型是止盈平仓
             realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
             if realizedPnl < 0:  # 如果金额大于0，就继续等待，可能刚刚平仓的仓位信息还没有更新
                 time.sleep(3)
             else:
-                break
+                return profit + realizedPnl
 
-    return profit + realizedPnl
+
