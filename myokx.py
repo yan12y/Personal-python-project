@@ -46,7 +46,7 @@ def get_instId_lotsz(instrument_type, instrument_id):
         return None
 
 
-def get_ticker_last_price(instId: str):
+def get_ticker_last_price(instId: str)->tuple | None:
     """
     获取交易币对最近的市价信息
     :param instId: 交易类型
