@@ -50,7 +50,7 @@ def real_time_data_manager_thread(host: str, port: int, username: str, password:
                 break
 
             if real_time_data(global_vars.r_d, host, port, username, password, database, global_vars.data_table_name):
-                time.sleep(5 * 60)
+                time.sleep(6 * 60)
             else:
                 send_email(sender, receiver, sender_password, subject='来自okx自动化策略程序的运行错误的提醒:',
                            content='线程：real_time_data_manager_thread\n实时数据批处理失败\n请检查网络')
