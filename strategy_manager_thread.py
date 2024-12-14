@@ -511,7 +511,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     n_sz = (x / current_price) * leverage
                     # 取整
                     n_sz = round(n_sz)
-                    ppn = ppn + n_sz * current_price / leverage - 20
+                    ppn = ppn + n_sz * current_price / leverage - 70
 
                     global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新n_sz成功:{n_sz}'))
                     global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新ppn成功:{ppn}'))
