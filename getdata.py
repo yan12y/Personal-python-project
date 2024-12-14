@@ -262,45 +262,35 @@ def get_btc_sol_eth_doge_last_price_mean_normalized() -> np.array:
     """
     获取比特币（BTC）、Solana（SOL）、以太坊（ETH）和狗狗币（DOGE）的最新价格，并计算其标准化后的平均值。
 
-    该函数首先尝试从市场获取四种加密货币的最新价格，然后计算这些价格的平均值、标准差，并进行标准化处理。
-    标准化是将数据转换为具有零均值和单位标准差的过程，这有助于比较不同数据集的分布。
-    最后，函数返回标准化后的平均值。
+    该函数首先尝试从市场获取四种加密货币的当前最新价格较昨收盘价的变化百分比变化,
+    最后，函数返回平均值。
 
     返回:
-        np.array: 标准化后的平均值。
+        np.array: 平均值。
 
     异常:
         Exception: 如果在获取价格或进行计算过程中发生任何异常，函数将抛出异常，并提供错误原因。
 
     注意:
-        - 该函数依赖于外部函数get_ticker_last_price来获取每种货币的最新价格。
-        - 该函数假设get_ticker_last_price函数返回两个值：货币信息，和其最新价格。
+        - 该函数依赖于外部函数get_ticker_last_price来获取每种货币的当前最新价格较昨收盘价的变化百分比变化。
+        - 该函数假设get_ticker_last_price函数返回三个值：货币信息，和其最新价格，当前最新价格较昨收盘价的变化百分比变化。
         - 该函数不处理get_ticker_last_price函数可能返回的任何异常，而是将这些异常传递给调用者。
         - 该函数假设价格数据是数值类型，可以进行数学运算。
     """
     try:
-        # 从市场获取每种货币的最新价格
-        btc, btc_last_price = get_ticker_last_price('BTC-USDT-SWAP')
-        sol, sol_last_price = get_ticker_last_price('SOL-USDT-SWAP')
-        eth, eth_last_price = get_ticker_last_price('ETH-USDT-SWAP')
-        doge, doge_last_price = get_ticker_last_price('DOGE-USDT-SWAP')
+        # 从市场获取每种货币的当前最新价格较昨收盘价的变化百分比变化
+        _, _, btc_p = get_ticker_last_price('BTC-USDT-SWAP')
+        _, _, sol_p = get_ticker_last_price('SOL-USDT-SWAP')
+        _, _, eth_p = get_ticker_last_price('ETH-USDT-SWAP')
+        _, _, doge_p = get_ticker_last_price('DOGE-USDT-SWAP')
 
         # 将价格存储在numpy数组中
-        price = np.array([btc_last_price, sol_last_price, eth_last_price, doge_last_price])
+        p = np.array([btc_p, sol_p, eth_p, doge_p])
 
         # 计算价格的平均值
-        mean_price = np.mean(price)
+        mean_p = np.mean(p)
 
-        # 计算价格的标准差
-        std = np.std(price)
-
-        # 对价格进行标准化处理
-        normalized = (price - mean_price) / std
-        # 计算标准化后的平均值
-        mean_normalized = np.mean(normalized)
-
-        # 返回标准化后的平均值
-        return mean_normalized
+        return mean_p
     except Exception as e:
         # 如果发生异常，抛出异常信息
         raise Exception(f"获取BTC, SOL, ETH, DOGE币种价格时发生错误, 错误原因为: {e}")

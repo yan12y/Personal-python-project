@@ -46,11 +46,11 @@ def get_instId_lotsz(instrument_type, instrument_id):
         return None
 
 
-def get_ticker_last_price(instId: str)->tuple | None:
+def get_ticker_last_price(instId: str) -> tuple | None:
     """
     获取交易币对最近的市价信息
     :param instId: 交易类型
-    :return: 返回float类型数据或者None
+    :return: 返回交易对的所有信息，交易对的最新价格信息，当前最新价格较昨收盘价的变化百分比变化
     """
     url = 'https://www.okx.com/api/v5/market/ticker'
     params = {
@@ -61,7 +61,8 @@ def get_ticker_last_price(instId: str)->tuple | None:
         data1 = json.dumps(res.json(), indent=4)
         data1 = json.loads(data1)
         data = data1['data'][0]
-        return data1['data'][0], float(data['last'])
+        p = (float(data['last']) - float(data['sodUtc8'])) / float(data['sodUtc8'])
+        return data1['data'][0], float(data['last']), p
     else:
         return None
 
@@ -367,7 +368,6 @@ class MyOkx:
                     return -1
 
         return None  # 如果没有进行任何平仓操作，返回 None
-
 
     def get_positions_history(self):
         """

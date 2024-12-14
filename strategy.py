@@ -9,8 +9,8 @@ import global_vars
 def go_long_signal(long_place_downlimit: float, long_place_uplimit: float, p: float, last_p_p: float,
                    before_five_current_data_average: float,
                    current_five_current_data_average: float,
-                   before_mean_normalized: float,
-                   current_mean_normalized: float,
+                   before_mean_p: float,
+                   current_mean_p: float,
                    l_c: int, l_c_limit: int, before_bidSz: float, current_bidSz: float,
                    before_vol24h: float, current_vol24h: float) -> bool:
     """
@@ -24,8 +24,8 @@ def go_long_signal(long_place_downlimit: float, long_place_uplimit: float, p: fl
     :param last_p_p: （当前价格 - 上一次价格）/ 上一次价格
     :param before_five_current_data_average: 前五个周期的当前价格平均值。
     :param current_five_current_data_average: 当前五个周期的当前价格平均值。
-    :param current_mean_normalized: 上一次btc,sol,eth,doge的价格标准化均值
-    :param before_mean_normalized: 当前btc,sol,eth,doge的价格标准化均值
+    :param before_mean_p: 上一次btc,sol,eth,doge的百分比变化均值
+    :param current_mean_p: 当前btc,sol,eth,doge的百分比变化均值
     :param l_c: 多头开仓计数器，用于跟踪多头开仓的次数。
     :param l_c_limit: 这是开多仓的最多次数
     :param before_bidSz: 前一次的买单深度（bid size）。
@@ -36,7 +36,7 @@ def go_long_signal(long_place_downlimit: float, long_place_uplimit: float, p: fl
     """
     if (long_place_downlimit < p < long_place_uplimit and
             float(before_five_current_data_average) <= float(current_five_current_data_average) and
-            float(before_mean_normalized) <= float(current_mean_normalized) and
+            float(before_mean_p) <= float(current_mean_p) and
             l_c <= l_c_limit and
             float(before_bidSz) < float(current_bidSz) and
             float(before_vol24h) < float(current_vol24h) and
@@ -50,8 +50,8 @@ def go_long_signal(long_place_downlimit: float, long_place_uplimit: float, p: fl
 def go_short_signal(short_place_downlimit: float, short_place_uplimit: float, p: float, last_p_p: float,
                     before_five_current_data_average: float,
                     current_five_current_data_average: float,
-                    before_mean_normalized: float,
-                    current_mean_normalized: float,
+                    before_mean_p: float,
+                    current_mean_p: float,
                     s_c: int, s_c_limit: int, before_askSz: float, current_askSz: float,
                     before_vol24h: float, current_vol24h: float) -> bool:
     """
@@ -67,8 +67,8 @@ def go_short_signal(short_place_downlimit: float, short_place_uplimit: float, p:
     :param p: 当前价格与前一日收盘价的变动百分比。
     :param before_five_current_data_average: 前五个周期的当前价格平均值。
     :param current_five_current_data_average: 当前五个周期的当前价格平均值。
-    :param current_mean_normalized: 上一次btc,sol,eth,doge的价格标准化均值
-    :param before_mean_normalized: 当前btc,sol,eth,doge的价格标准化均值
+    :param before_mean_p: 上一次btc,sol,eth,doge的百分比变化均值
+    :param current_mean_p: 当前btc,sol,eth,doge的百分比变化均值
     :param s_c: 空头开仓计数器，用于跟踪空头开仓的次数。
     :param s_c_limit: 这是开空仓的最多次数
     :param before_askSz: 前一次的卖单深度（ask size）。
@@ -79,7 +79,7 @@ def go_short_signal(short_place_downlimit: float, short_place_uplimit: float, p:
     """
     if (-short_place_downlimit > p > -short_place_uplimit and
             float(before_five_current_data_average) >= float(current_five_current_data_average) and
-            float(before_mean_normalized) >= float(current_mean_normalized) and
+            float(before_mean_p) >= float(current_mean_p) and
             s_c <= s_c_limit and
             float(before_askSz) <= float(current_askSz) and
             float(before_vol24h) <= float(current_vol24h) and
@@ -93,8 +93,8 @@ def predict(current_price: float,
             last_price: float,
             before_five_current_data_average: float,
             current_five_current_data_average: float,
-            before_mean_normalized: float,
-            current_mean_normalized: float,
+            before_mean_p: float,
+            current_mean_p: float,
             before_bidSz: float,
             current_bidSz: float,
             before_askSz: float,
@@ -109,8 +109,8 @@ def predict(current_price: float,
     - last_price: float, 上一次价格。
     - before_five_current_data_average: float, 前五个周期的当前价格平均值。
     - current_five_current_data_average: float, 当前五个周期的当前价格平均值。
-    - before_mean_normalized: float, 上一次主流货币的价格标准化均值。
-    - current_mean_normalized: float, 当前主流货币的价格标准化均值。
+    - before_mean_p: float, 上一次主流货币的百分比变化均值。
+    - current_mean_p: float, 当前主流货币的百分比变化均值。
     - before_bidSz: float, 前一次的买单深度（bid size）。
     - current_bidSz: float, 当前的买单深度（bid size）。
     - before_askSz: float, 前一次的卖单深度（ask size）。
@@ -130,7 +130,7 @@ def predict(current_price: float,
     new_d = data_to_df(global_vars.attr_df,
                        current_price, last_price,
                        current_five_current_data_average, before_five_current_data_average,
-                       current_mean_normalized, before_mean_normalized,
+                       current_mean_p, before_mean_p,
                        current_bidSz, before_bidSz,
                        current_askSz, before_askSz,
                        current_vol24h, before_vol24h)

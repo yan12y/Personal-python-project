@@ -12,7 +12,7 @@ from datetime import datetime as dt
 from datetime import timedelta
 
 " 自定义模块："
-from mysqldata import get_late_date_prices, sava_all_data_to_mysql, create_control_program_switch_table
+from mysqldata import sava_all_data_to_mysql, create_control_program_switch_table
 from myokx import MyOkx, get_ticker_last_price
 from logs import create_log_table
 from mymail import send_email
@@ -103,7 +103,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
     """
     global_vars.lq.push(('交易线程-状态信息', 'info', '交易线程启动'))  # 启动交易线程
     ppn = place_position_nums  # 计划持仓时，实际拥有的最大头寸数量
-    before_mean_normalized: float = 0  # 上一次btc,sol,eth,doge的实时价格标准化均值
+    before_mean_p: float = 0  # 上一次btc,sol,eth,doge的当前最新价格较昨收盘价的变化百分比变化均值
     before_five_current_data_average = 0  # 上一次五个当前交易对的实时价格的平均值
     current_five_current_data_average = 0  # 当前五个当前交易对的实时价格的平均值
 
@@ -131,9 +131,6 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
     # 从配置文件中加载下列参数:
     (long_place_downlimit, long_place_uplimit, short_place_downlimit, short_place_uplimit,
      l_c, s_c, u_p_1, u_p_2, u_p_3, u_p_4, d_p_1, d_p_2, d_p_3, d_p_4, n_sz, loss, profit) = function.load_parameter()
-
-    # 昨日收盘价格，初始为0
-    last_date_price: float = 0
 
     # 创建控制程序开关的表
     while True:
@@ -228,35 +225,6 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 if global_vars.s_finished_event: continue  # 保存前一天的日数据到数据库中去失败，应该退出程序,否则继续执行
 
                 yesterday = today  # 更新前一天
-                # 从数据库中重新获取前一天的收盘价
-                b = 0  # 重试计数器
-                while True:
-                    try:
-                        last_date_price = get_late_date_prices(username=mysql_username, password=mysql_password,
-                                                               host=mysql_host, database=mysql_coin_database,
-                                                               table=mysql_coin_day_date_table)
-                        global_vars.lq.push(('交易线程-获取前一天的收盘价', 'Success', f'获取前一天收盘价成功'))
-                        break
-                    except Exception as e:
-                        if b < 3:
-                            global_vars.lq.push(
-                                ('交易线程-获取前一天的收盘价', 'Error', f'获取前一天数据失败:{e},5秒后重试'))
-                            b += 1
-                            time.sleep(5)
-                        else:
-
-                            # 多次获取前一天的数据失败
-                            global_vars.s_finished_event = True  # 设置个事件,告知l,r线程，s线程将停止，l,s线程也应该停止
-
-                            # 尝试发送邮件通知后，保存参数到配置文件，再停止程序
-                            send_email(sender=sender, receiver=receiver, password=sender_password,
-                                       subject='来自okx自动化策略程序的运行错误的提醒:',
-                                       content="发生在：strategy_manager_thread线程。\n"
-                                               "错误位置：从数据库中获取前一天数据时失败。\n"
-                                               f"错误原因：{e}")
-                            break
-
-                if global_vars.s_finished_event: continue  # 从数据库中重新获取前一天的收盘价失败，应该退出程序，否则继续执行
 
                 # 新的一天，初始化一些参数：
                 (u_p_1, d_p_1, u_p_2, d_p_2, u_p_3, d_p_3, u_p_4, d_p_4, random_start, random_end,
@@ -266,11 +234,12 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                     place_downlimit=place_downlimit)
 
             " 交易前准备 "
-            current_coin_data, current_price = get_ticker_last_price(instId)  # 获取当前交易类型的最新信息和最新价格信息
+            current_coin_data, current_price, p = get_ticker_last_price(
+                instId)  # 获取当前交易类型的最新信息,的所有信息，交易对的最新价格信息，当前最新价格较昨收盘价的变化百分比变化
             current_bidSz, current_askSz = float(current_coin_data["bidSz"]), float(
                 current_coin_data["askSz"])  # 从交易类型的最新信息中获取当前交易类类型的最新买卖深度
             current_vol24h = float(current_coin_data['vol24h'])  # 从交易类型的最新信息中获取当前交易类型的24小时交易量
-            current_mean_normalized = get_btc_sol_eth_doge_last_price_mean_normalized()  # 获取BTC,SOL,ETH,DOGE的最新价格标准化的平均值
+            current_mean_p = get_btc_sol_eth_doge_last_price_mean_normalized()  # 获取BTC,SOL,ETH,DOGE的最新价格标准化的平均值
             now = datetime.datetime.now()  # 获取此时的时间
             formatted_now = now.strftime("%Y-%m-%d %H:%M:%S")  # 格式化日期和时间
             current_position_nums = 0  # 当前instId类型的仓位头寸，初始化为0
@@ -287,8 +256,6 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         elif pos > 0:  # 说明当前交易类型有多头仓位
                             current_position_nums = float(position["notionalUsd"])  # 获取多头仓位头寸信息，取正值
                             break
-
-            p = (current_price - last_date_price) / last_date_price  # 计算当前最新价格较昨收盘价的变化百分比变化
 
             # 计算当前最新价格较上一周期价格的变化百分比变化
             if before_price != 0:  # 程序初次运行last_p被初始化为0，避免初次运行出现零除
@@ -317,14 +284,14 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             " 开仓逻辑 "
             # 开多仓逻辑
             if go_long_signal(long_place_downlimit, long_place_uplimit, p, last_p_p, before_five_current_data_average,
-                              current_five_current_data_average, before_mean_normalized, current_mean_normalized,
+                              current_five_current_data_average, before_mean_p, current_mean_p,
                               l_c, l_c_limit, before_bidSz, current_bidSz, before_vol24h, current_vol24h) and predict(
                 current_price,
                 before_price,
                 before_five_current_data_average,
                 current_five_current_data_average,
-                before_mean_normalized,
-                current_mean_normalized,
+                before_mean_p,
+                current_mean_p,
                 before_bidSz, current_bidSz,
                 before_askSz,
                 current_askSz,
@@ -366,14 +333,14 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             # 这是开空仓的逻辑
             elif go_short_signal(short_place_downlimit, short_place_uplimit, p, last_p_p,
                                  before_five_current_data_average,
-                                 current_five_current_data_average, before_mean_normalized, current_mean_normalized,
+                                 current_five_current_data_average, before_mean_p, current_mean_p,
                                  s_c, s_c_limit, before_askSz, current_askSz, before_vol24h,
                                  current_vol24h) and predict(current_price,
                                                              before_price,
                                                              before_five_current_data_average,
                                                              current_five_current_data_average,
-                                                             before_mean_normalized,
-                                                             current_mean_normalized,
+                                                             before_mean_p,
+                                                             current_mean_p,
                                                              before_bidSz, current_bidSz,
                                                              before_askSz,
                                                              current_askSz,
@@ -467,7 +434,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                         global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【空,超0.25方向】失败'))
 
                         # 由区间的计数器触发止盈的操作
-                        elif today_pos > 0 and ( (u_p_1 > 20) or (u_p_2 > 27) or (u_p_3 > 40) or (u_p_4 > 6)):
+                        elif today_pos > 0 and ((u_p_1 > 20) or (u_p_2 > 27) or (u_p_3 > 40) or (u_p_4 > 6)):
                             trade_type = 2
                             re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                       place_uplimit=place_uplimit,
@@ -488,7 +455,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                 global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【多,区间计数器触发】失败'))
 
                         # 如果d_p_1,到d_p_4其中一个大于设定值，且持有空仓，那么就平空仓。
-                        elif today_pos < 0 and ( (d_p_1 > 10) or (d_p_2 > 13) or (d_p_3 > 20) or (d_p_4 > 3)):
+                        elif today_pos < 0 and ((d_p_1 > 10) or (d_p_2 > 13) or (d_p_3 > 20) or (d_p_4 > 3)):
                             trade_type = -2
                             re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                       place_uplimit=place_uplimit,
@@ -565,8 +532,8 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                 last_p_p,  # 上一次价格和前一次价格的涨跌幅
                 before_five_current_data_average,  # 上一次五个当前价格的平均值
                 current_five_current_data_average,  # 当前五个当前价格的平均值
-                before_mean_normalized,  # 上一次主流币当前价格标准化平均值
-                current_mean_normalized,  # 当前主流币当前价格的平均值
+                before_mean_p,  # 用before_mean_p表示上一次主流货币当前价格标准化均值
+                current_mean_p,  # 用current_mean_p表示当前主流币百分比变化平均值
                 before_bidSz,  # 上一次bidSz
                 current_bidSz,  # 当前bidSz
                 before_askSz,  # 上一次askSz
@@ -602,7 +569,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             # 更新上一周期的24小时交易量
             before_vol24h = current_vol24h
             # 更新上一周期btc,sol,eth,doge的价格标准化均值
-            before_mean_normalized = current_mean_normalized
+            before_mean_p = current_mean_p
             # 更新上一周期价格
             before_price = current_price
 
