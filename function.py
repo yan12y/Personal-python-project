@@ -63,18 +63,18 @@ def modulate_randomtime(random_start: int, random_end: int, before_price: float,
     if last_p_p >= 0.01:
         # 变化太快，减少休眠时间以快速响应市场变化
         random_start, random_end = 2, 4
-    elif 0.0015 < last_p_p:
+    elif 0.001 < last_p_p < 0.01:
         # 变化较快，适度减少休眠时间
         random_start, random_end = max(2, random_start - 45), min(100, random_end - 70)
-    elif 0.001 < last_p_p:
+    elif 0.0006 < last_p_p < 0.001:
         # 变化适中，略微减少休眠时间
         random_start, random_end = max(2, random_start - 20), min(100, random_end - 45)
-    elif 0.0005 < last_p_p:
+    elif 0.0001 < last_p_p < 0.0006:
         # 变化较慢，略微增加休眠时间
-        random_start, random_end = random_start + 1, random_end + 5
-    elif last_p_p < 0.0005:
+        random_start, random_end = random_start + 5, random_end + 9
+    elif last_p_p < 0.0001:
         # 变化很慢，增加休眠时间以减少交易频率
-        random_start, random_end = random_start + 5, random_end + 20
+        random_start, random_end = random_start + 8, random_end + 23
 
     # 确保随机休眠时间区间的合理性
     random_start = max(2, min(45, random_start))  # random_start的最小值为2，最大值为45
@@ -545,7 +545,8 @@ def statistics_profit(o: MyOkx, trade_type: int, profit: float) -> float:
         while True:
             realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
             if realizedPnl > 0:  # 如果金额大于0，就继续等待,可能刚刚平仓的仓位信息还没有更新
-                time.sleep(3)
+                time.sleep(10)
+                continue
             else:
                 profit = profit - abs(realizedPnl)
                 return profit
@@ -553,7 +554,8 @@ def statistics_profit(o: MyOkx, trade_type: int, profit: float) -> float:
         while True:  # 说明交易类型是止盈平仓
             realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
             if realizedPnl < 0:  # 如果金额大于0，就继续等待，可能刚刚平仓的仓位信息还没有更新
-                time.sleep(3)
+                time.sleep(10)
+                continue
             else:
                 profit = profit + realizedPnl
                 return profit

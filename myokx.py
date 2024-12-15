@@ -9,10 +9,12 @@
 - 平仓操作。
 """
 
+
 # 内置模块
 import requests
 import json
 from datetime import datetime
+import time
 
 # 第三方模块
 from okx.Account import AccountAPI
@@ -369,11 +371,14 @@ class MyOkx:
 
         return None  # 如果没有进行任何平仓操作，返回 None
 
-    def get_positions_history(self):
+    def get_positions_history(self,instType='SWAP',instId='ETH-USDT-SWAP'):
         """
-        返回最新的历史仓位信息
-        :return:
+        获取历史持仓信息
+        :param instType:   交易品种类型
+        :param instId:   交易品种
+        :return:  返回最新的一条历史仓位记录
         """
         # 获取历史持仓信息
-        positions_history = self.account.get_positions_history(instType='SWAP', instId='ETH-USDT-SWAP')
-        return positions_history['data'][1]
+        time.sleep(15)
+        positions_history = self.account.get_positions_history(instType=instType, instId=instId,limit=1)
+        return positions_history['data'][0]
