@@ -541,21 +541,12 @@ def statistics_profit(o: MyOkx, trade_type: int, profit: float) -> float:
     """
     if trade_type in [-1, 1, 0]: return profit  # 没有发生止盈止损操作，直接返回
 
-    if trade_type == 3:  # 说明交易类型是止损平仓
+    if trade_type in[3,2,-2]:  # 说明交易类型是止损平仓
         while True:
             realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
             if realizedPnl > 0:  # 如果金额大于0，就继续等待,可能刚刚平仓的仓位信息还没有更新
                 time.sleep(10)
-                continue
-            else:
-                profit = profit - abs(realizedPnl)
-                return profit
-    elif trade_type == -2 or trade_type == 2:
-        while True:  # 说明交易类型是止盈平仓
-            realizedPnl = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
-            if realizedPnl < 0:  # 如果金额大于0，就继续等待，可能刚刚平仓的仓位信息还没有更新
-                time.sleep(10)
-                continue
             else:
                 profit = profit + realizedPnl
                 return profit
+
