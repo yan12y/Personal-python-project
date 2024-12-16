@@ -27,15 +27,14 @@ function.py 模块功能概述
 这个模块为交易策略提供了灵活性和动态调整的能力，使得策略能够根据市场的实时变化进行自我调整，以期达到更好的交易效果和风险控制。通过这些功能，交易策略能够更加智能地管理交易行为，提高决策的效率和效果。
 
 """
-import time
-
-from global_vars import lq
 
 " 内置模块 "
 import json
+import time
 
 " 自定义模块 "
 from myokx import MyOkx
+from global_vars import lq
 
 
 # 根据市场价格变动调整随机休眠时间区间的函数
@@ -68,13 +67,13 @@ def modulate_randomtime(random_start: int, random_end: int, before_price: float,
         random_start, random_end = max(2, random_start - 45), min(100, random_end - 70)
     elif 0.0006 < last_p_p < 0.001:
         # 变化适中，略微减少休眠时间
-        random_start, random_end = max(2, random_start - 20), min(100, random_end - 45)
+        random_start, random_end = max(2, random_start - 35), min(100, random_end - 50)
     elif 0.0001 < last_p_p < 0.0006:
         # 变化较慢，略微增加休眠时间
-        random_start, random_end = random_start + 5, random_end + 9
+        random_start, random_end = random_start + 2, random_end + 7
     elif last_p_p < 0.0001:
         # 变化很慢，增加休眠时间以减少交易频率
-        random_start, random_end = random_start + 8, random_end + 23
+        random_start, random_end = random_start + 4, random_end + 19
 
     # 确保随机休眠时间区间的合理性
     random_start = max(2, min(45, random_start))  # random_start的最小值为2，最大值为45
