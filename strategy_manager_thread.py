@@ -512,7 +512,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         # 取整
                         n_sz = round(n_sz)
                         ppn = n_sz * current_price / leverage - 50
-                    elif n_sz <= 20:
+                    elif 10 < n_sz <= 20:
 
                         n_sz += 3
                         ppn = n_sz * current_price / leverage - 50
