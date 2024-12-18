@@ -512,8 +512,13 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         # 取整
                         n_sz = round(n_sz)
                         ppn = n_sz * current_price / leverage - 50
+                    elif n_sz <= 20:
+
+                        n_sz += 3
+                        ppn = n_sz * current_price / leverage - 50
+
                     else:
-                        n_sz += 2
+                        n_sz += 1
                         ppn = n_sz * current_price / leverage - 50
 
                     global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新n_sz成功:{n_sz}'))
