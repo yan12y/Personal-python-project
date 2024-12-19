@@ -489,37 +489,29 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             if close_positions_re:  # close_positions没有返回None值，说明没有出现什么错误。
                 if close_positions_re == 1:  # 发生了止损操作
                     trade_type = 3  # 交易类型标记为3，表示止损操作
-                    if n_sz <= 10:
-                        # 获取刚刚平仓的历史仓位信息
-                        while True:
-                            last_loss = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
-                            if last_loss > 0:  # 如果金额大于0，就继续等待
-                                global_vars.lq.push(('交易线程-止损记录', 'Info', '等待平仓历史仓位信息更新'))
-                                time.sleep(10)
-                            else:
-                                global_vars.lq.push(
-                                    ('交易线程-止损记录', 'Success', '平仓历史仓位信息更新成功,成功获取亏损金额'))
-                                break
 
-                        # 获取亏损金额
-                        loss = float(loss) + abs(last_loss)
-                        # 计算下一次大概的盈利金额
-                        profit = loss * 2
-                        # 下一次计划持仓量
-                        x = (profit / 0.5) * leverage  # 假设0.5是下一次盈利的收益率
-                        # 更新n_sz
-                        n_sz = (x / current_price) * leverage
-                        # 取整
-                        n_sz = round(n_sz)
-                        ppn = n_sz * current_price / leverage - 50
-                    elif 10 < n_sz <= 20:
+                    # 获取刚刚平仓的历史仓位信息
+                    while True:
+                        last_loss = float(o.get_positions_history()['realizedPnl'])  # 获取亏损金额
+                        if last_loss > 0:  # 如果金额大于0，就继续等待
+                            global_vars.lq.push(('交易线程-止损记录', 'Info', '等待平仓历史仓位信息更新'))
+                            time.sleep(10)
+                        else:
+                            global_vars.lq.push(
+                                ('交易线程-止损记录', 'Success', '平仓历史仓位信息更新成功,成功获取亏损金额'))
 
-                        n_sz += 3
-                        ppn = n_sz * current_price / leverage - 50
-
-                    else:
-                        n_sz += 1
-                        ppn = n_sz * current_price / leverage - 50
+                            # 获取亏损金额
+                            loss = float(loss) + abs(last_loss)
+                            # 计算下一次大概的盈利金额
+                            profit = loss * 1.5
+                            # 下一次计划持仓量
+                            x = (profit / 0.5) * leverage  # 假设0.5是下一次盈利的收益率
+                            # 更新n_sz
+                            n_sz = (x / current_price) * leverage
+                            # 取整
+                            n_sz = round(n_sz)
+                            ppn = n_sz * current_price / leverage - 50
+                            break
 
                     global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新n_sz成功:{n_sz}'))
                     global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新ppn成功:{ppn}'))

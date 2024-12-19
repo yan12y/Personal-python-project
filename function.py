@@ -30,7 +30,6 @@ function.py 模块功能概述
 
 " 内置模块 "
 import json
-import time
 
 " 自定义模块 "
 from myokx import MyOkx
@@ -64,16 +63,16 @@ def modulate_randomtime(random_start: int, random_end: int, before_price: float,
         random_start, random_end = 2, 4
     elif 0.001 < last_p_p < 0.01:
         # 变化较快，适度减少休眠时间
-        random_start, random_end = max(2, random_start - 45), min(100, random_end - 70)
+        random_start, random_end = max(2, random_start - 60), min(100, random_end - 90)
     elif 0.0006 < last_p_p < 0.001:
         # 变化适中，略微减少休眠时间
-        random_start, random_end = max(2, random_start - 35), min(100, random_end - 50)
+        random_start, random_end = max(2, random_start - 50), min(100, random_end - 70)
     elif 0.0001 < last_p_p < 0.0006:
         # 变化较慢，略微增加休眠时间
-        random_start, random_end = random_start + 2, random_end + 7
+        random_start, random_end = random_start + 8, random_end + 13
     elif last_p_p < 0.0001:
         # 变化很慢，增加休眠时间以减少交易频率
-        random_start, random_end = random_start + 4, random_end + 19
+        random_start, random_end = random_start + 19, random_end + 38
 
     # 确保随机休眠时间区间的合理性
     random_start = max(2, min(45, random_start))  # random_start的最小值为2，最大值为45
