@@ -570,12 +570,13 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
             before_vol24h = current_vol24h
             # 更新上一周期btc,sol,eth,doge的价格标准化均值
             before_mean_p = current_mean_p
-            # 更新上一周期价格
-            before_price = current_price
 
             # 更新随机休眠时间的区间，用于下次循环
             random_start, random_end = function.modulate_randomtime(random_start, random_end, before_price,
-                                                                    current_price)
+
+                                                                 current_price)
+            # 更新上一周期价格
+            before_price = current_price
             time.sleep(random_time)  # 休息一段时间,等待下一次循环
 
             # 及时保存重要参数
