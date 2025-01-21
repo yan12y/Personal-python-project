@@ -45,6 +45,7 @@ def model_train_thread(sender: str,
          并将 `global_vars.s_finished_event` 设置为 True 以停止所有线程。
        """
     global_vars.lq.push(('模型训练线程-状态信息', 'info', '模型训练线程启动'))
+    time.sleep(15) # 延迟启动，避免程序启动时出现错误
     while True:
 
         if global_vars.s_finished_event:
@@ -61,6 +62,10 @@ def model_train_thread(sender: str,
             global_vars.attr_df, all_df = data_preprocessing(data, target)
 
             # 如果数据量不足，不训练模型
+            if all_df is None:
+                time.sleep(4 * 60)
+                continue
+
             if len(all_df) < 1000:
                 global_vars.lq.push(("模型训练线程-状态信息", "info", "交易数据量不足，不训练模型"))
                 time.sleep(4 * 60)

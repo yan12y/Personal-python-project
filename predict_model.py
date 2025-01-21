@@ -66,7 +66,7 @@ def get_data_from_mysql(host: str, username: str,
                     start_date_str = next_date_str
                 except Exception as e:
                     # 当内层try出现异常，比如没有下一个日期对应的数据表时，直接返回已经获取到的数据
-                    print(f"查询数据出现异常: {e}，返回已获取的数据。")
+                    print(f"已经获取到所有数据库的所有实时数据！")
                     return attr_re_df,target_re_df
         except Exception as e:
             raise e
@@ -78,6 +78,9 @@ def data_preprocessing(data: pd.DataFrame, target: pd.DataFrame) -> tuple:
     :param target:   包含目标变量的数据集
     :return:   返回两个dframe，一个包含没有进行标准化的特征集（attr_data，这个数据集可用在方法：data_to_df作为orignal_data的参数）；一个包含标准化的特征和目标变量合并集（all_df，这个数据集可用在方法：divide_feature_and_target作为data的参数）
     """
+    if data is None or target is None:
+        return None, None
+
     if len(data) == len(target) + 1:  # 删除正在交易，还没有确定是否盈亏的记录
         # 获取索引的最后一个值（假设是整数索引）
         last_index = data.index[-1]

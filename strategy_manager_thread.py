@@ -56,7 +56,8 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
 
                             l_c_limit: int = 10,
                             s_c_limit: int = 10,
-                            limit_uplRatio: float = -0.5
+                            limit_uplRatio: float = -0.5,
+                            lower_take_profit:float = 0.012
                             ):
     """
      这是交易策略管理线程。
@@ -99,6 +100,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
     :param l_c_limit: 这是最多的开多仓次数
     :param s_c_limit: 这是最多的开空仓次数
     :param limit_uplRatio: 为实现收益额 / 保证金（止损最大比值）
+    :param lower_take_profit: 止盈下限,即止盈下限为当前价格与前一天价格变化百分比的最小值
     :return: 无返回值，此线程函数负责执行交易策略并管理相关操作。
     """
     global_vars.lq.push(('交易线程-状态信息', 'info', '交易线程启动'))  # 启动交易线程
@@ -379,7 +381,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         trade_type = -1
 
             " 获利逻辑 "
-            if p > 0.012 or p < - 0.012:
+            if p > float(lower_take_profit) or p < -float(lower_take_profit):
 
                 for position in current_positions:  # 遍历持仓列表获取当前仓位信息
                     if position["instId"] == instId:
@@ -434,7 +436,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                         global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【空,超0.25方向】失败'))
 
                         # 由区间的计数器触发止盈的操作
-                        elif today_pos > 0 and ((u_p_1 > 20) or (u_p_2 >25) or (u_p_3 > 20) or (u_p_4 > 10)):
+                        elif today_pos > 0 and ((u_p_1 > 50) or (u_p_2 >50) or (u_p_3 > 50) or (u_p_4 > 30)):
                             trade_type = 2
                             re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                       place_uplimit=place_uplimit,
@@ -455,7 +457,7 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                                 global_vars.lq.push(('交易线程-止盈记录', 'Error', '止盈【多,区间计数器触发】失败'))
 
                         # 如果d_p_1,到d_p_4其中一个大于设定值，且持有空仓，那么就平空仓。
-                        elif today_pos < 0 and ((d_p_1 > 10) or (d_p_2 > 15) or (d_p_3 > 10) or (d_p_4 > 5)):
+                        elif today_pos < 0 and ((d_p_1 > 50) or (d_p_2 > 50) or (d_p_3 > 50) or (d_p_4 >50)):
                             trade_type = -2
                             re = function.take_progit(o=o, instId=instId, leverage=leverage,
                                                       place_uplimit=place_uplimit,
@@ -499,13 +501,12 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                         else:
                             global_vars.lq.push(
                                 ('交易线程-止损记录', 'Success', '平仓历史仓位信息更新成功,成功获取亏损金额'))
-
                             # 获取亏损金额
                             loss = float(loss) + abs(last_loss)
                             # 计算下一次大概的盈利金额
-                            profit = loss * 1.5
+                            profit = loss * 1.3
                             # 下一次计划持仓量
-                            x = (profit / 0.5) * leverage  # 假设0.5是下一次盈利的收益率
+                            x = (profit / 0.6) * leverage  # 假设0.5是下一次盈利的收益率
                             # 更新n_sz
                             n_sz = (x / current_price) * leverage
                             # 取整
@@ -513,9 +514,9 @@ def strategy_manager_thread(mysql_host: str, mysql_username: str, mysql_password
                             ppn = n_sz * current_price / leverage - 50
                             break
 
-                    global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新n_sz成功:{n_sz}'))
-                    global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新ppn成功:{ppn}'))
-                    global_vars.lq.push(('交易线程-止损记录', 'Success', '一键止损成功'))
+                        global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新n_sz成功:{n_sz}'))
+                        global_vars.lq.push(('交易线程-止损记录', 'Info', f'更新ppn成功:{ppn}'))
+                        global_vars.lq.push(('交易线程-止损记录', 'Success', '一键止损成功'))
                 else:
                     global_vars.lq.push(('交易线程-止损记录', 'Error', '一键止损失败'))
 

@@ -8,14 +8,15 @@
 - 创建控制程序开关的表。
 """
 
-import time
-from datetime import datetime
+
 # 内置模块
 from datetime import timedelta
+import time
+from datetime import datetime
 
-import pandas as pd
 # 第三方模块
 import pymysql
+import pandas as pd
 
 # 自定义模块
 from myokx import MyOkx

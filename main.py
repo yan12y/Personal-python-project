@@ -74,6 +74,7 @@ if __name__ == '__main__':
             'l_c_limit': result[35],
             's_c_limit': result[36],
             'limit_uplRatio': result[37],
+            'lower_take_profit':result[39]
         }
 
 
