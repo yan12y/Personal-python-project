@@ -61,11 +61,12 @@ def model_train_thread(sender: str,
             # 数据预处理
             global_vars.attr_df, all_df = data_preprocessing(data, target)
 
-            # 如果数据量不足，不训练模型
+            # 如果没有数据，不训练模型
             if all_df is None:
+                global_vars.lq.push(("模型训练线程-状态信息", "info", "没有可训练的数据！"))
                 time.sleep(4 * 60)
                 continue
-
+            # 如果数据量不足，不训练模型
             if len(all_df) < 1000:
                 global_vars.lq.push(("模型训练线程-状态信息", "info", "交易数据量不足，不训练模型"))
                 time.sleep(4 * 60)
