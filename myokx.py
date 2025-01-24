@@ -212,12 +212,13 @@ class MyOkx:
 
         sz = float(minSz * sz)
 
+        if sz % minSz != 0:  # 如果sz不是minSz的整数倍
+            sz -= sz % minSz # 减去余数，使得sz成为minSz的整数倍,比如sz=10.5,minSz=0.01,那么sz=10.5-0.5=10
+
         if sz == 0 or sz <= minSz:
             sz = minSz
 
-        # sz保留一位小数
-        sz = round(sz, 1)
-
+        print(sz)
         params = {
             "instId": instId,
             "tdMode": tdMode,
